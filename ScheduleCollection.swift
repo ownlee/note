@@ -80,9 +80,29 @@ final class ScheduleCollection {
         teamID == nil ? .personal : .team
     }
 
-    func assignOwnership(_ mode: ScheduleSharingMode) {
+    func assignOwnership(_ mode: ScheduleSharingMode, teamID: UUID? = nil) {
         sharingMode = mode
-        teamID = mode == .team ? (teamID ?? id) : nil
+        self.teamID = mode == .team ? (teamID ?? self.teamID ?? id) : nil
+    }
+}
+
+@Model
+final class ScheduleTeamWorkspace {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var createdAt: Date
+    var updatedAt: Date
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        createdAt: Date = .now,
+        updatedAt: Date = .now
+    ) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }
 
@@ -90,11 +110,18 @@ final class ScheduleCollection {
 final class ScheduleTeamMember {
     @Attribute(.unique) var id: UUID
     var name: String
+    var teamID: UUID?
     var createdAt: Date
 
-    init(id: UUID = UUID(), name: String, createdAt: Date = .now) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        teamID: UUID? = nil,
+        createdAt: Date = .now
+    ) {
         self.id = id
         self.name = name
+        self.teamID = teamID
         self.createdAt = createdAt
     }
 }

@@ -16,6 +16,7 @@ struct ScratchpadApp: App {
                 for: BrainNote.self,
                 ScheduleEntry.self,
                 ScheduleCollection.self,
+                ScheduleTeamWorkspace.self,
                 ScheduleTimePreset.self,
                 ScheduleTeamMember.self,
                 configurations: configuration

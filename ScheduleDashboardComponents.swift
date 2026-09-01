@@ -45,6 +45,96 @@ struct ScheduleWorkspacePicker: View {
     }
 }
 
+struct TeamWorkspaceSelector: View {
+    let workspaces: [ScheduleTeamWorkspace]
+    let selectedID: UUID?
+    let onSelect: (UUID) -> Void
+    let onManage: () -> Void
+
+    private var selectedWorkspace: ScheduleTeamWorkspace? {
+        workspaces.first(where: { $0.id == selectedID }) ?? workspaces.first
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Menu {
+                ForEach(workspaces) { workspace in
+                    Button {
+                        onSelect(workspace.id)
+                    } label: {
+                        Label(
+                            workspace.name,
+                            systemImage: workspace.id == selectedWorkspace?.id
+                                ? "checkmark"
+                                : "person.2"
+                        )
+                    }
+                }
+
+                Divider()
+                Button(action: onManage) {
+                    Label("Manage teams", systemImage: "slider.horizontal.3")
+                }
+            } label: {
+                Label(selectedWorkspace?.name ?? "Choose Team", systemImage: "person.2.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.indigo)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.indigo.opacity(0.11), in: Capsule())
+            }
+            .accessibilityLabel("Current team: \(selectedWorkspace?.name ?? "none")")
+
+            Button(action: onManage) {
+                Image(systemName: "plus")
+                    .font(.caption.weight(.bold))
+                    .frame(width: 32, height: 32)
+                    .background(Color.primary.opacity(0.06), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add or manage teams")
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+struct TeamShareFailureBanner: View {
+    let failedCount: Int
+    let isRetrying: Bool
+    let onRetry: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.icloud.fill")
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(failedCount == 1 ? "Team sharing paused" : "\(failedCount) shares paused")
+                    .font(.subheadline.weight(.semibold))
+                Text("Schedules remain in this team only.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(action: onRetry) {
+                if isRetrying {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("Retry").font(.subheadline.weight(.semibold))
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(isRetrying)
+        }
+        .padding(14)
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct MonthlyScheduleCalendar: View {
     @Binding var month: Date
     @Binding var selectedDay: Date?

@@ -28,6 +28,8 @@ struct ContentView: View {
     @Query(sort: \ScheduleEntry.startDate) private var scheduleEntries: [ScheduleEntry]
     @Query(sort: \ScheduleCollection.createdAt, order: .reverse)
     private var scheduleCollections: [ScheduleCollection]
+    @Query(sort: \ScheduleTeamWorkspace.updatedAt, order: .reverse)
+    private var teamWorkspaces: [ScheduleTeamWorkspace]
     @Query(sort: \ScheduleTeamMember.name) private var teamMembers: [ScheduleTeamMember]
 
     @State private var draft = ""
@@ -45,6 +47,8 @@ struct ContentView: View {
     @State private var selectedScheduleDay: Date?
     @State private var scheduleWorkspace = ScheduleSharingMode.personal
     @AppStorage("brainnote.teamCalendarEnabled") private var isTeamCalendarEnabled = false
+    @AppStorage("brainnote.selectedTeamWorkspaceID")
+    private var selectedTeamWorkspaceIDText = ""
     @AppStorage("brainnote.didLearnCardGestures") private var didLearnCardGestures = false
     @State private var scheduleImportMessage: String?
     @State private var scheduleImportDismissTask: Task<Void, Never>?
@@ -52,6 +56,7 @@ struct ContentView: View {
     @State private var selectedSchedulePhotoItem: PhotosPickerItem?
     @State private var isReadingScheduleImage = false
     @State private var isSyncingSharedSchedules = false
+    @State private var retryingShareCollectionID: UUID?
     @FocusState private var isComposerFocused: Bool
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -207,7 +212,9 @@ struct ContentView: View {
                     ScheduleEditorSheet(
                         entry: nil,
                         initialDay: day,
-                        initialSharingMode: sharingMode
+                        initialSharingMode: sharingMode,
+                        teamWorkspaceID: activeTeamWorkspace?.id,
+                        teamWorkspaceName: activeTeamWorkspace?.name
                     )
                         .presentationDetents([.large])
                         .presentationDragIndicator(.visible)
@@ -216,7 +223,9 @@ struct ContentView: View {
                     ScheduleEditorSheet(
                         entry: entry,
                         initialDay: entry.startDate,
-                        initialSharingMode: entry.resolvedSharingMode
+                        initialSharingMode: entry.resolvedSharingMode,
+                        teamWorkspaceID: entry.teamID,
+                        teamWorkspaceName: teamWorkspaceName(for: entry.teamID)
                     )
                         .presentationDetents([.large])
                         .presentationDragIndicator(.visible)
@@ -225,7 +234,9 @@ struct ContentView: View {
                     ScheduleImportPreviewSheet(
                         draft: draft,
                         noteProcessor: noteProcessor,
-                        sharingMode: sharingMode
+                        sharingMode: sharingMode,
+                        teamWorkspaceID: activeTeamWorkspace?.id,
+                        teamWorkspaceName: activeTeamWorkspace?.name
                     )
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -240,13 +251,28 @@ struct ContentView: View {
                 #endif
 
                 case let .batchSchedule(month, sharingMode):
-                    BatchScheduleSheet(month: month, sharingMode: sharingMode)
+                    BatchScheduleSheet(
+                        month: month,
+                        sharingMode: sharingMode,
+                        teamWorkspaceID: activeTeamWorkspace?.id,
+                        teamWorkspaceName: activeTeamWorkspace?.name
+                    )
                         .presentationDetents([.large])
                         .presentationDragIndicator(.visible)
 
                 case let .bulkEditSchedule(month, sharingMode):
-                    BulkScheduleEditSheet(month: month, sharingMode: sharingMode)
+                    BulkScheduleEditSheet(
+                        month: month,
+                        sharingMode: sharingMode,
+                        teamWorkspaceID: activeTeamWorkspace?.id,
+                        teamWorkspaceName: activeTeamWorkspace?.name
+                    )
                         .presentationDetents([.large])
+                        .presentationDragIndicator(.visible)
+
+                case .manageTeamWorkspaces:
+                    TeamWorkspaceManagerSheet()
+                        .presentationDetents([.medium, .large])
                         .presentationDragIndicator(.visible)
                 }
             }
@@ -373,6 +399,22 @@ struct ContentView: View {
             var insertedCount = 0
 
             for payload in payloads {
+                let incomingTeamID = payload.collection.teamID ?? payload.collection.id
+                let incomingTeam: ScheduleTeamWorkspace
+                if let existing = teamWorkspaces.first(where: { $0.id == incomingTeamID }) {
+                    incomingTeam = existing
+                    if let name = payload.collection.teamName, !name.isEmpty {
+                        incomingTeam.name = name
+                        incomingTeam.updatedAt = .now
+                    }
+                } else {
+                    incomingTeam = ScheduleTeamWorkspace(
+                        id: incomingTeamID,
+                        name: payload.collection.teamName ?? "Shared Team"
+                    )
+                    modelContext.insert(incomingTeam)
+                }
+
                 let collection: ScheduleCollection
                 if let existing = scheduleCollections.first(where: { $0.id == payload.collection.id }) {
                     collection = existing
@@ -386,13 +428,13 @@ struct ContentView: View {
                         month: payload.collection.month,
                         kind: payload.collection.kind,
                         sharingMode: .team,
-                        teamID: payload.collection.id,
+                        teamID: incomingTeamID,
                         shareState: .shared
                     )
                     modelContext.insert(collection)
                 }
 
-                collection.assignOwnership(.team)
+                collection.assignOwnership(.team, teamID: incomingTeamID)
                 collection.shareState = .shared
                 collection.cloudKitZoneName = payload.zoneName
                 collection.cloudKitZoneOwnerName = payload.zoneOwnerName
@@ -410,7 +452,7 @@ struct ContentView: View {
                         existing.labelColor = snapshot.labelColor
                         existing.assigneeText = snapshot.assigneeText
                         existing.seriesID = snapshot.collectionID
-                        existing.assignOwnership(.team, teamID: collection.teamID ?? collection.id)
+                        existing.assignOwnership(.team, teamID: incomingTeamID)
                     } else {
                         modelContext.insert(
                             ScheduleEntry(
@@ -421,7 +463,7 @@ struct ContentView: View {
                                 kind: snapshot.kind,
                                 details: snapshot.details,
                                 seriesID: snapshot.collectionID,
-                                teamID: collection.teamID ?? collection.id,
+                                teamID: incomingTeamID,
                                 sharingMode: .team,
                                 cloudKitRecordName: "entry-\(snapshot.id.uuidString)",
                                 labelColor: snapshot.labelColor,
@@ -478,6 +520,21 @@ struct ContentView: View {
                 }
 
                 Button {
+                    presentedSheet = .manageTeamWorkspaces
+                } label: {
+                    Label("Manage teams", systemImage: "person.2.circle")
+                }
+
+                if let failed = failedShareCollections.first {
+                    Button {
+                        Task { await retrySharing(failed) }
+                    } label: {
+                        Label("Retry sharing", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(retryingShareCollectionID != nil)
+                }
+
+                Button {
                     Task { await syncSharedSchedules(silently: false) }
                 } label: {
                     Label("Sync team calendar", systemImage: "arrow.triangle.2.circlepath")
@@ -511,8 +568,12 @@ struct ContentView: View {
 
     @MainActor
     private func manageTeamCalendar() async {
+        guard let teamID = activeTeamWorkspace?.id else {
+            processingError = "Create or choose a team first."
+            return
+        }
         guard let collection = scheduleCollections.first(where: {
-            $0.resolvedSharingMode == .team && $0.shareState == .shared
+            $0.teamID == teamID && $0.shareState == .shared
         }), let zoneName = collection.cloudKitZoneName,
            let shareRecordName = collection.cloudKitShareRecordName else {
             processingError = "Add or import the first team schedule, then you can invite and manage members here."
@@ -529,6 +590,79 @@ struct ContentView: View {
             #endif
         } catch {
             processingError = error.localizedDescription
+        }
+    }
+
+    private var failedShareCollections: [ScheduleCollection] {
+        guard let teamID = activeTeamWorkspace?.id else { return [] }
+        return scheduleCollections.filter {
+            $0.teamID == teamID && $0.shareState == .failed
+        }
+    }
+
+    @MainActor
+    private func retrySharing(_ collection: ScheduleCollection) async {
+        guard retryingShareCollectionID == nil else { return }
+        guard let teamID = collection.teamID,
+              let workspace = teamWorkspaces.first(where: { $0.id == teamID }) else {
+            processingError = "This schedule is not attached to a valid team workspace."
+            return
+        }
+
+        let entries = scheduleEntries.filter { $0.seriesID == collection.id }
+        guard !entries.isEmpty else {
+            processingError = "There are no schedules left to share."
+            return
+        }
+
+        retryingShareCollectionID = collection.id
+        collection.shareState = .preparing
+        try? modelContext.save()
+
+        do {
+            let prepared = try await ScheduleSharingService.shared.prepareShare(
+                collection: ScheduleCollectionSnapshot(
+                    id: collection.id,
+                    title: collection.title,
+                    month: collection.month,
+                    kind: collection.kind,
+                    teamID: workspace.id,
+                    teamName: workspace.name
+                ),
+                entries: entries.map {
+                    ScheduleEntrySnapshot(
+                        id: $0.id,
+                        collectionID: collection.id,
+                        title: $0.title,
+                        startDate: $0.startDate,
+                        endDate: $0.endDate,
+                        kind: $0.kind,
+                        details: $0.details,
+                        labelColor: $0.labelColor,
+                        assigneeText: $0.assigneeText
+                    )
+                }
+            )
+
+            collection.shareState = .shared
+            collection.cloudKitZoneName = prepared.share.recordID.zoneID.zoneName
+            collection.cloudKitZoneOwnerName = prepared.share.recordID.zoneID.ownerName
+            collection.cloudKitRootRecordName = "collection-\(collection.id.uuidString)"
+            collection.cloudKitShareRecordName = prepared.share.recordID.recordName
+            collection.shareURLString = prepared.share.url?.absoluteString
+            collection.participantCount = max(prepared.share.participants.count, 1)
+            entries.forEach { $0.cloudKitRecordName = "entry-\($0.id.uuidString)" }
+            try modelContext.save()
+
+            retryingShareCollectionID = nil
+            #if canImport(UIKit)
+            presentedSheet = .manageTeamShare(prepared)
+            #endif
+        } catch {
+            collection.shareState = .failed
+            try? modelContext.save()
+            retryingShareCollectionID = nil
+            processingError = "Sharing still could not be prepared: \(error.localizedDescription)"
         }
     }
 
@@ -703,8 +837,27 @@ struct ContentView: View {
         case .personal:
             return scheduleEntries.filter { $0.resolvedSharingMode == .personal }
         case .team:
-            return scheduleEntries.filter { $0.resolvedSharingMode == .team }
+            guard let teamID = activeTeamWorkspace?.id else { return [] }
+            return scheduleEntries.filter { $0.teamID == teamID }
         }
+    }
+
+    private var selectedTeamWorkspaceID: UUID? {
+        get { UUID(uuidString: selectedTeamWorkspaceIDText) }
+        nonmutating set { selectedTeamWorkspaceIDText = newValue?.uuidString ?? "" }
+    }
+
+    private var activeTeamWorkspace: ScheduleTeamWorkspace? {
+        if let selectedTeamWorkspaceID,
+           let selected = teamWorkspaces.first(where: { $0.id == selectedTeamWorkspaceID }) {
+            return selected
+        }
+        return teamWorkspaces.first
+    }
+
+    private func teamWorkspaceName(for id: UUID?) -> String? {
+        guard let id else { return nil }
+        return teamWorkspaces.first(where: { $0.id == id })?.name
     }
 
     private var activeScheduleImportMode: ScheduleSharingMode {
@@ -865,10 +1018,13 @@ struct ContentView: View {
 
     @ViewBuilder
     private var scheduleDashboard: some View {
+        let activeTeamID = activeTeamWorkspace?.id
         ScheduleWorkspacePicker(
             selection: $scheduleWorkspace,
             personalCount: scheduleEntries.filter { $0.resolvedSharingMode == .personal }.count,
-            teamCount: scheduleEntries.filter { $0.resolvedSharingMode == .team }.count,
+            teamCount: activeTeamID.map { teamID in
+                scheduleEntries.filter { $0.teamID == teamID }.count
+            } ?? 0,
             showsTeamCalendar: isTeamCalendarEnabled
         )
         .onChange(of: scheduleWorkspace) { _, newValue in
@@ -882,7 +1038,31 @@ struct ContentView: View {
             })?.startDate
         }
         .onChange(of: isTeamCalendarEnabled) { _, isEnabled in
-            if !isEnabled { scheduleWorkspace = .personal }
+            if isEnabled {
+                migrateScheduleOwnershipIfNeeded()
+            } else {
+                scheduleWorkspace = .personal
+            }
+        }
+
+        if scheduleWorkspace == .team {
+            TeamWorkspaceSelector(
+                workspaces: teamWorkspaces,
+                selectedID: activeTeamWorkspace?.id,
+                onSelect: { teamID in
+                    selectedTeamWorkspaceIDText = teamID.uuidString
+                    selectedScheduleDay = nil
+                },
+                onManage: { presentedSheet = .manageTeamWorkspaces }
+            )
+
+            if let failed = failedShareCollections.first {
+                TeamShareFailureBanner(
+                    failedCount: failedShareCollections.count,
+                    isRetrying: retryingShareCollectionID == failed.id,
+                    onRetry: { Task { await retrySharing(failed) } }
+                )
+            }
         }
 
         MonthlyScheduleCalendar(
@@ -1921,10 +2101,11 @@ struct ContentView: View {
                 shareRecordName: shareRecordName
             ) else { continue }
 
+            let teamID = collection.teamID
             for name in names where !teamMembers.contains(where: {
-                $0.name.caseInsensitiveCompare(name) == .orderedSame
+                $0.teamID == teamID && $0.name.caseInsensitiveCompare(name) == .orderedSame
             }) {
-                modelContext.insert(ScheduleTeamMember(name: name))
+                modelContext.insert(ScheduleTeamMember(name: name, teamID: teamID))
             }
         }
 
@@ -1935,27 +2116,58 @@ struct ContentView: View {
         let legacyTeamCollections = scheduleCollections.filter {
             $0.teamID != nil || $0.sharingMode == .team
         }
+        let hasLegacyTeamData = !legacyTeamCollections.isEmpty || scheduleEntries.contains {
+            $0.teamID != nil || $0.sharingMode == .team
+        }
+
+        guard hasLegacyTeamData || isTeamCalendarEnabled || !teamWorkspaces.isEmpty else {
+            for entry in scheduleEntries where entry.teamID == nil {
+                entry.assignOwnership(.personal)
+            }
+            if modelContext.hasChanges { try? modelContext.save() }
+            return
+        }
+
+        let workspace: ScheduleTeamWorkspace
+        if let selectedTeamWorkspaceID,
+           let selected = teamWorkspaces.first(where: { $0.id == selectedTeamWorkspaceID }) {
+            workspace = selected
+        } else if let first = teamWorkspaces.first {
+            workspace = first
+            selectedTeamWorkspaceIDText = first.id.uuidString
+        } else {
+            workspace = ScheduleTeamWorkspace(name: "My Team")
+            modelContext.insert(workspace)
+            selectedTeamWorkspaceIDText = workspace.id.uuidString
+        }
+
+        let validWorkspaceIDs = Set(teamWorkspaces.map(\.id)).union([workspace.id])
         var teamIDByCollectionID: [UUID: UUID] = [:]
 
         for collection in legacyTeamCollections {
-            collection.assignOwnership(.team)
-            teamIDByCollectionID[collection.id] = collection.teamID ?? collection.id
+            let resolvedTeamID = collection.teamID.flatMap {
+                validWorkspaceIDs.contains($0) ? $0 : nil
+            } ?? workspace.id
+            collection.assignOwnership(.team, teamID: resolvedTeamID)
+            teamIDByCollectionID[collection.id] = resolvedTeamID
         }
 
         for entry in scheduleEntries {
-            if let teamID = entry.teamID {
+            if let seriesID = entry.seriesID,
+               let teamID = teamIDByCollectionID[seriesID] {
                 entry.assignOwnership(.team, teamID: teamID)
-            } else if entry.sharingMode == .team {
-                let teamID = entry.seriesID.flatMap { teamIDByCollectionID[$0] }
-                    ?? entry.seriesID
-                    ?? entry.id
-                entry.assignOwnership(.team, teamID: teamID)
-            } else if let seriesID = entry.seriesID,
-                      let teamID = teamIDByCollectionID[seriesID] {
-                entry.assignOwnership(.team, teamID: teamID)
+            } else if entry.teamID != nil || entry.sharingMode == .team {
+                let validTeamID = entry.teamID.flatMap {
+                    validWorkspaceIDs.contains($0) ? $0 : nil
+                } ?? workspace.id
+                entry.assignOwnership(.team, teamID: validTeamID)
             } else {
                 entry.assignOwnership(.personal)
             }
+        }
+
+        for member in teamMembers where member.teamID == nil {
+            member.teamID = workspace.id
         }
 
         if modelContext.hasChanges { try? modelContext.save() }
@@ -1993,6 +2205,7 @@ private enum SheetDestination: Identifiable {
     case importSchedule(ScheduleImportDraft, ScheduleSharingMode)
     case batchSchedule(Date, ScheduleSharingMode)
     case bulkEditSchedule(Date, ScheduleSharingMode)
+    case manageTeamWorkspaces
     #if canImport(UIKit)
     case manageTeamShare(PreparedScheduleShare)
     #endif
@@ -2013,11 +2226,185 @@ private enum SheetDestination: Identifiable {
             "batch-schedule-\(sharingMode.rawValue)-\(month.timeIntervalSinceReferenceDate)"
         case let .bulkEditSchedule(month, sharingMode):
             "bulk-edit-schedule-\(sharingMode.rawValue)-\(month.timeIntervalSinceReferenceDate)"
+        case .manageTeamWorkspaces:
+            "manage-team-workspaces"
         #if canImport(UIKit)
         case let .manageTeamShare(prepared):
             "manage-team-\(prepared.id.uuidString)"
         #endif
         }
+    }
+}
+
+private struct TeamWorkspaceManagerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \ScheduleTeamWorkspace.updatedAt, order: .reverse)
+    private var workspaces: [ScheduleTeamWorkspace]
+    @Query private var entries: [ScheduleEntry]
+    @Query private var collections: [ScheduleCollection]
+    @AppStorage("brainnote.selectedTeamWorkspaceID")
+    private var selectedTeamWorkspaceIDText = ""
+
+    @State private var isAddingTeam = false
+    @State private var newTeamName = ""
+    @State private var workspaceToRename: ScheduleTeamWorkspace?
+    @State private var renameText = ""
+    @State private var workspaceToDelete: ScheduleTeamWorkspace?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    ForEach(workspaces) { workspace in
+                        HStack(spacing: 12) {
+                            Button {
+                                select(workspace)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: isSelected(workspace) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(isSelected(workspace) ? Color.indigo : Color.secondary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(workspace.name)
+                                            .foregroundStyle(.primary)
+                                        Text(teamSummary(workspace))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            Menu {
+                                Button {
+                                    renameText = workspace.name
+                                    workspaceToRename = workspace
+                                } label: {
+                                    Label("Rename", systemImage: "pencil")
+                                }
+
+                                if canDelete(workspace) {
+                                    Button(role: .destructive) {
+                                        workspaceToDelete = workspace
+                                    } label: {
+                                        Label("Delete Empty Team", systemImage: "trash")
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .frame(width: 32, height: 32)
+                            }
+                            .accessibilityLabel("Options for \(workspace.name)")
+                        }
+                    }
+
+                    Button {
+                        newTeamName = ""
+                        isAddingTeam = true
+                    } label: {
+                        Label("New Team", systemImage: "plus")
+                    }
+                } header: {
+                    Text("Teams")
+                } footer: {
+                    Text("Personal schedules never appear in a team. Each team only shows schedules carrying that team’s ID.")
+                }
+            }
+            .navigationTitle("Team Workspaces")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .alert("New Team", isPresented: $isAddingTeam) {
+                TextField("Team name", text: $newTeamName)
+                Button("Cancel", role: .cancel) {}
+                Button("Create") { createTeam() }
+                    .disabled(cleaned(newTeamName).isEmpty)
+            } message: {
+                Text("You can switch teams without mixing their schedules.")
+            }
+            .alert(
+                "Rename Team",
+                isPresented: Binding(
+                    get: { workspaceToRename != nil },
+                    set: { if !$0 { workspaceToRename = nil } }
+                )
+            ) {
+                TextField("Team name", text: $renameText)
+                Button("Cancel", role: .cancel) { workspaceToRename = nil }
+                Button("Save") { renameTeam() }
+                    .disabled(cleaned(renameText).isEmpty)
+            }
+            .confirmationDialog(
+                "Delete this empty team?",
+                isPresented: Binding(
+                    get: { workspaceToDelete != nil },
+                    set: { if !$0 { workspaceToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete Empty Team", role: .destructive) { deleteEmptyTeam() }
+                Button("Cancel", role: .cancel) { workspaceToDelete = nil }
+            }
+        }
+    }
+
+    private func isSelected(_ workspace: ScheduleTeamWorkspace) -> Bool {
+        selectedTeamWorkspaceIDText == workspace.id.uuidString
+    }
+
+    private func teamSummary(_ workspace: ScheduleTeamWorkspace) -> String {
+        let count = entries.filter { $0.teamID == workspace.id }.count
+        return count == 1 ? "1 schedule" : "\(count) schedules"
+    }
+
+    private func canDelete(_ workspace: ScheduleTeamWorkspace) -> Bool {
+        !entries.contains { $0.teamID == workspace.id } &&
+        !collections.contains { $0.teamID == workspace.id }
+    }
+
+    private func cleaned(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func select(_ workspace: ScheduleTeamWorkspace) {
+        selectedTeamWorkspaceIDText = workspace.id.uuidString
+        workspace.updatedAt = .now
+        try? modelContext.save()
+    }
+
+    private func createTeam() {
+        let name = cleaned(newTeamName)
+        guard !name.isEmpty else { return }
+        let workspace = ScheduleTeamWorkspace(name: name)
+        modelContext.insert(workspace)
+        selectedTeamWorkspaceIDText = workspace.id.uuidString
+        try? modelContext.save()
+    }
+
+    private func renameTeam() {
+        guard let workspaceToRename else { return }
+        let name = cleaned(renameText)
+        guard !name.isEmpty else { return }
+        workspaceToRename.name = name
+        workspaceToRename.updatedAt = .now
+        try? modelContext.save()
+        self.workspaceToRename = nil
+    }
+
+    private func deleteEmptyTeam() {
+        guard let workspaceToDelete, canDelete(workspaceToDelete) else { return }
+        let wasSelected = isSelected(workspaceToDelete)
+        modelContext.delete(workspaceToDelete)
+        if wasSelected {
+            selectedTeamWorkspaceIDText = workspaces.first(where: { $0.id != workspaceToDelete.id })?.id.uuidString ?? ""
+        }
+        try? modelContext.save()
+        self.workspaceToDelete = nil
     }
 }
 
@@ -2241,11 +2628,14 @@ private struct DayScheduleSheet: View {
 
     let day: Date
     let sharingMode: ScheduleSharingMode
+    let teamWorkspaceID: UUID? = nil
     @State private var editor: DayEditorDestination?
 
     private var entries: [ScheduleEntry] {
         allEntries.filter {
-            $0.resolvedSharingMode == sharingMode &&
+            (sharingMode == .personal
+                ? $0.resolvedSharingMode == .personal
+                : $0.teamID == teamWorkspaceID) &&
             Calendar.current.isDate($0.startDate, inSameDayAs: day)
         }
     }
@@ -2358,6 +2748,8 @@ private struct BulkScheduleEditSheet: View {
 
     let month: Date
     let sharingMode: ScheduleSharingMode
+    let teamWorkspaceID: UUID?
+    let teamWorkspaceName: String?
 
     @State private var selectedIDs: Set<UUID> = []
     @State private var labelColor = ScheduleLabelColor.indigo
@@ -2384,7 +2776,9 @@ private struct BulkScheduleEditSheet: View {
 
     private var entries: [ScheduleEntry] {
         allEntries.filter {
-            $0.resolvedSharingMode == sharingMode &&
+            (sharingMode == .personal
+                ? $0.resolvedSharingMode == .personal
+                : $0.teamID == teamWorkspaceID) &&
             Calendar.current.isDate($0.startDate, equalTo: month, toGranularity: .month)
         }
     }
@@ -2910,20 +3304,24 @@ private struct BulkScheduleEditSheet: View {
 
     private var teamMemberNames: [String] {
         TeamAssigneePicker.combineMemberNames(
-            savedMembers: teamMembers.map(\.name),
-            entries: allEntries
+            savedMembers: teamMembers.filter { $0.teamID == teamWorkspaceID }.map(\.name),
+            entries: allEntries.filter { $0.teamID == teamWorkspaceID }
         )
     }
 
     private func addTeamMember(_ name: String) {
         guard !teamMemberNames.contains(where: { $0.caseInsensitiveCompare(name) == .orderedSame }) else { return }
-        modelContext.insert(ScheduleTeamMember(name: name))
+        modelContext.insert(ScheduleTeamMember(name: name, teamID: teamWorkspaceID))
         try? modelContext.save()
     }
 
     @MainActor
     private func addFavoriteSchedules() async {
         guard let preset = selectedPreset else { return }
+        guard sharingMode == .personal || teamWorkspaceID != nil else {
+            saveError = "Choose a team workspace before adding schedules."
+            return
+        }
         isSaving = true
         defer { isSaving = false }
 
@@ -2940,7 +3338,7 @@ private struct BulkScheduleEditSheet: View {
                 endDate: interval.end,
                 kind: preset.kind,
                 seriesID: seriesID,
-                teamID: sharingMode == .team ? seriesID : nil,
+                teamID: sharingMode == .team ? teamWorkspaceID : nil,
                 sharingMode: sharingMode,
                 cloudKitRecordName: sharingMode == .team ? "entry-\(UUID().uuidString)" : nil,
                 labelColor: preset.labelColor ?? preset.kind.defaultLabelColor,
@@ -2962,8 +3360,8 @@ private struct BulkScheduleEditSheet: View {
                 month: normalizedMonth,
                 kind: preset.kind,
                 sharingMode: sharingMode,
-                teamID: sharingMode == .team ? seriesID : nil,
-                shareState: sharingMode == .team ? .preparing : .local
+                teamID: sharingMode == .team ? teamWorkspaceID : nil,
+                shareState: sharingMode == .team ? .failed : .local
             )
         )
         newEntries.forEach(modelContext.insert)
@@ -3199,6 +3597,8 @@ private struct BatchScheduleSheet: View {
 
     let month: Date
     let sharingMode: ScheduleSharingMode
+    let teamWorkspaceID: UUID?
+    let teamWorkspaceName: String?
 
     @State private var selectedPresetID: UUID?
     @State private var selectedDays: Set<Date> = []
@@ -3434,14 +3834,14 @@ private struct BatchScheduleSheet: View {
 
     private var teamMemberNames: [String] {
         TeamAssigneePicker.combineMemberNames(
-            savedMembers: teamMembers.map(\.name),
-            entries: existingEntries
+            savedMembers: teamMembers.filter { $0.teamID == teamWorkspaceID }.map(\.name),
+            entries: existingEntries.filter { $0.teamID == teamWorkspaceID }
         )
     }
 
     private func addTeamMember(_ name: String) {
         guard !teamMemberNames.contains(where: { $0.caseInsensitiveCompare(name) == .orderedSame }) else { return }
-        modelContext.insert(ScheduleTeamMember(name: name))
+        modelContext.insert(ScheduleTeamMember(name: name, teamID: teamWorkspaceID))
         try? modelContext.save()
     }
 
@@ -3476,12 +3876,18 @@ private struct BatchScheduleSheet: View {
     @MainActor
     private func save() async {
         guard let preset = selectedPreset else { return }
+        guard sharingMode == .personal || teamWorkspaceID != nil else {
+            saveError = "Choose a team workspace before adding schedules."
+            return
+        }
         isSaving = true
         let seriesID = UUID()
         let candidates = selectedDays.sorted().compactMap { day -> ScheduleEntry? in
             guard let interval = preset.interval(on: day) else { return nil }
             let duplicate = existingEntries.contains {
-                $0.resolvedSharingMode == sharingMode &&
+                (sharingMode == .personal
+                    ? $0.resolvedSharingMode == .personal
+                    : $0.teamID == teamWorkspaceID) &&
                 $0.startDate == interval.start && $0.endDate == interval.end
             }
             guard !duplicate else { return nil }
@@ -3491,7 +3897,7 @@ private struct BatchScheduleSheet: View {
                 endDate: interval.end,
                 kind: preset.kind,
                 seriesID: seriesID,
-                teamID: sharingMode == .team ? seriesID : nil,
+                teamID: sharingMode == .team ? teamWorkspaceID : nil,
                 sharingMode: sharingMode,
                 cloudKitRecordName: sharingMode == .team ? "entry-\(UUID().uuidString)" : nil,
                 labelColor: preset.labelColor ?? preset.kind.defaultLabelColor,
@@ -3510,7 +3916,7 @@ private struct BatchScheduleSheet: View {
             month: normalizedMonth,
             kind: preset.kind,
             sharingMode: sharingMode,
-            teamID: sharingMode == .team ? seriesID : nil,
+            teamID: sharingMode == .team ? teamWorkspaceID : nil,
             shareState: sharingMode == .team ? .preparing : .local
         )
         candidates.forEach {
@@ -3541,7 +3947,9 @@ private struct BatchScheduleSheet: View {
                     id: seriesID,
                     title: "Team Calendar",
                     month: normalizedMonth,
-                    kind: preset.kind
+                    kind: preset.kind,
+                    teamID: teamWorkspaceID,
+                    teamName: teamWorkspaceName
                 ),
                 entries: candidates.map {
                     ScheduleEntrySnapshot(
@@ -3571,9 +3979,9 @@ private struct BatchScheduleSheet: View {
         } catch {
             // A failed invitation must not leak team-authored data into the
             // personal workspace. Keep it team-owned and allow retry.
-            collection.assignOwnership(.team)
+            collection.assignOwnership(.team, teamID: teamWorkspaceID)
             collection.shareState = .failed
-            candidates.forEach { $0.assignOwnership(.team, teamID: collection.teamID ?? collection.id) }
+            candidates.forEach { $0.assignOwnership(.team, teamID: teamWorkspaceID) }
             try? modelContext.save()
             isSaving = false
             saveError = "Saved in Team Calendar, but sharing needs to be retried. \(error.localizedDescription)"
@@ -3700,6 +4108,8 @@ private struct ScheduleImportPreviewSheet: View {
     let draft: ScheduleImportDraft
     let noteProcessor: NoteProcessor
     let sharingMode: ScheduleSharingMode
+    let teamWorkspaceID: UUID?
+    let teamWorkspaceName: String?
 
     @State private var title: String
     @State private var kind: ScheduleKind
@@ -3716,11 +4126,15 @@ private struct ScheduleImportPreviewSheet: View {
     init(
         draft: ScheduleImportDraft,
         noteProcessor: NoteProcessor,
-        sharingMode: ScheduleSharingMode
+        sharingMode: ScheduleSharingMode,
+        teamWorkspaceID: UUID?,
+        teamWorkspaceName: String?
     ) {
         self.draft = draft
         self.noteProcessor = noteProcessor
         self.sharingMode = sharingMode
+        self.teamWorkspaceID = teamWorkspaceID
+        self.teamWorkspaceName = teamWorkspaceName
         _title = State(initialValue: draft.schedule.title)
         _kind = State(initialValue: draft.schedule.kind)
         _confidence = State(
@@ -4067,7 +4481,11 @@ private struct ScheduleImportPreviewSheet: View {
     }
 
     private var existingWorkspaceEntries: [ScheduleEntry] {
-        existingEntries.filter { $0.resolvedSharingMode == sharingMode }
+        existingEntries.filter {
+            sharingMode == .personal
+                ? $0.resolvedSharingMode == .personal
+                : $0.teamID == teamWorkspaceID
+        }
     }
 
     private var excludedIDs: Set<UUID> {
@@ -4114,6 +4532,10 @@ private struct ScheduleImportPreviewSheet: View {
     @MainActor
     private func saveSchedule() async {
         guard !selectedShifts.isEmpty, !needsKindConfirmation else { return }
+        guard sharingMode == .personal || teamWorkspaceID != nil else {
+            saveError = "Choose a team workspace before importing."
+            return
+        }
         isSaving = true
 
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -4125,7 +4547,7 @@ private struct ScheduleImportPreviewSheet: View {
             month: draft.schedule.month,
             kind: kind,
             sharingMode: sharingMode,
-            teamID: sharingMode == .team ? seriesID : nil,
+            teamID: sharingMode == .team ? teamWorkspaceID : nil,
             shareState: sharingMode == .team ? .preparing : .local
         )
         let entries = selectedShifts.map { shift in
@@ -4137,7 +4559,7 @@ private struct ScheduleImportPreviewSheet: View {
                 kind: kind,
                 details: shift.details,
                 seriesID: seriesID,
-                teamID: sharingMode == .team ? seriesID : nil,
+                teamID: sharingMode == .team ? teamWorkspaceID : nil,
                 sharingMode: sharingMode,
                 cloudKitRecordName: sharingMode == .team ? "entry-\(shift.id.uuidString)" : nil
             )
@@ -4168,7 +4590,9 @@ private struct ScheduleImportPreviewSheet: View {
                 id: collection.id,
                 title: collection.title,
                 month: collection.month,
-                kind: collection.kind
+                kind: collection.kind,
+                teamID: teamWorkspaceID,
+                teamName: teamWorkspaceName
             )
             let entrySnapshots = entries.map {
                 ScheduleEntrySnapshot(
@@ -4199,10 +4623,10 @@ private struct ScheduleImportPreviewSheet: View {
         } catch {
             if didSaveSchedule {
                 // Preserve the chosen workspace even when CloudKit setup fails.
-                collection.assignOwnership(.team)
+                collection.assignOwnership(.team, teamID: teamWorkspaceID)
                 collection.shareState = .failed
                 entries.forEach {
-                    $0.assignOwnership(.team, teamID: collection.teamID ?? collection.id)
+                    $0.assignOwnership(.team, teamID: teamWorkspaceID)
                     $0.cloudKitRecordName = nil
                 }
                 try? modelContext.save()
@@ -4311,6 +4735,8 @@ private struct ScheduleEditorSheet: View {
     @Query(sort: \ScheduleTeamMember.name) private var teamMembers: [ScheduleTeamMember]
 
     let entry: ScheduleEntry?
+    let teamWorkspaceID: UUID?
+    let teamWorkspaceName: String?
 
     @State private var title: String
     @State private var kind: ScheduleKind
@@ -4330,9 +4756,13 @@ private struct ScheduleEditorSheet: View {
     init(
         entry: ScheduleEntry?,
         initialDay: Date,
-        initialSharingMode: ScheduleSharingMode
+        initialSharingMode: ScheduleSharingMode,
+        teamWorkspaceID: UUID? = nil,
+        teamWorkspaceName: String? = nil
     ) {
         self.entry = entry
+        self.teamWorkspaceID = entry?.teamID ?? teamWorkspaceID
+        self.teamWorkspaceName = teamWorkspaceName
 
         let calendar = Calendar.current
         let defaultStart = calendar.date(
@@ -4510,14 +4940,14 @@ private struct ScheduleEditorSheet: View {
 
     private var teamMemberNames: [String] {
         TeamAssigneePicker.combineMemberNames(
-            savedMembers: teamMembers.map(\.name),
-            entries: scheduleEntries
+            savedMembers: teamMembers.filter { $0.teamID == teamWorkspaceID }.map(\.name),
+            entries: scheduleEntries.filter { $0.teamID == teamWorkspaceID }
         )
     }
 
     private func addTeamMember(_ name: String) {
         guard !teamMemberNames.contains(where: { $0.caseInsensitiveCompare(name) == .orderedSame }) else { return }
-        modelContext.insert(ScheduleTeamMember(name: name))
+        modelContext.insert(ScheduleTeamMember(name: name, teamID: teamWorkspaceID))
         try? modelContext.save()
     }
 
@@ -4554,6 +4984,10 @@ private struct ScheduleEditorSheet: View {
 
     @MainActor
     private func save() async {
+        guard sharingMode == .personal || teamWorkspaceID != nil else {
+            saveError = "Choose a team workspace before saving."
+            return
+        }
         isSaving = true
         let finalDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
         let wasAlreadyShared = entry?.resolvedSharingMode == .team
@@ -4587,7 +5021,7 @@ private struct ScheduleEditorSheet: View {
                     : nil
             )
             modelContext.insert(newEntry)
-            newEntry.assignOwnership(sharingMode)
+            newEntry.assignOwnership(sharingMode, teamID: teamWorkspaceID)
             savedEntry = newEntry
         }
 
@@ -4624,7 +5058,7 @@ private struct ScheduleEditorSheet: View {
             savedEntry.seriesID = seriesID
             let groupedEntries = scheduleEntries.filter { $0.seriesID == seriesID } +
                 (scheduleEntries.contains(where: { $0.id == savedEntry.id }) ? [] : [savedEntry])
-            groupedEntries.forEach { $0.assignOwnership(.team, teamID: seriesID) }
+            groupedEntries.forEach { $0.assignOwnership(.team, teamID: teamWorkspaceID) }
 
             let collection = scheduleCollections.first { $0.id == seriesID } ?? ScheduleCollection(
                 id: seriesID,
@@ -4634,7 +5068,7 @@ private struct ScheduleEditorSheet: View {
                 ) ?? startDate,
                 kind: kind,
                 sharingMode: .team,
-                teamID: seriesID,
+                teamID: teamWorkspaceID,
                 shareState: .preparing
             )
             if !scheduleCollections.contains(where: { $0.id == seriesID }) {
@@ -4647,7 +5081,9 @@ private struct ScheduleEditorSheet: View {
                     id: collection.id,
                     title: collection.title,
                     month: collection.month,
-                    kind: collection.kind
+                    kind: collection.kind,
+                    teamID: teamWorkspaceID,
+                    teamName: teamWorkspaceName
                 ),
                 entries: groupedEntries.map {
                     ScheduleEntrySnapshot(
@@ -4683,13 +5119,13 @@ private struct ScheduleEditorSheet: View {
             if sharingMode == .team, !wasAlreadyShared {
                 let seriesID = savedEntry.seriesID
                 scheduleEntries.filter { $0.seriesID == seriesID }.forEach {
-                    $0.assignOwnership(.team, teamID: seriesID)
+                    $0.assignOwnership(.team, teamID: teamWorkspaceID)
                     $0.cloudKitRecordName = nil
                 }
-                savedEntry.assignOwnership(.team, teamID: seriesID)
+                savedEntry.assignOwnership(.team, teamID: teamWorkspaceID)
                 if let seriesID,
                    let collection = scheduleCollections.first(where: { $0.id == seriesID }) {
-                    collection.assignOwnership(.team)
+                    collection.assignOwnership(.team, teamID: teamWorkspaceID)
                     collection.shareState = .failed
                 }
                 try? modelContext.save()

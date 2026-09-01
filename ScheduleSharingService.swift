@@ -17,6 +17,24 @@ struct ScheduleCollectionSnapshot: Sendable {
     let title: String
     let month: Date
     let kind: ScheduleKind
+    let teamID: UUID?
+    let teamName: String?
+
+    init(
+        id: UUID,
+        title: String,
+        month: Date,
+        kind: ScheduleKind,
+        teamID: UUID? = nil,
+        teamName: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.month = month
+        self.kind = kind
+        self.teamID = teamID
+        self.teamName = teamName
+    }
 }
 
 struct ScheduleEntrySnapshot: Sendable {
@@ -118,6 +136,8 @@ actor ScheduleSharingService {
         root[Field.title] = collection.title as CKRecordValue
         root[Field.month] = collection.month as CKRecordValue
         root[Field.kind] = collection.kind.rawValue as CKRecordValue
+        root[Field.teamID] = collection.teamID?.uuidString as CKRecordValue?
+        root[Field.teamName] = collection.teamName as CKRecordValue?
 
         let entryRecords = entries.map { entry in
             let recordID = CKRecord.ID(
@@ -355,7 +375,14 @@ actor ScheduleSharingService {
               let month = record[Field.month] as? Date,
               let kindText = record[Field.kind] as? String,
               let kind = ScheduleKind(rawValue: kindText) else { return nil }
-        return ScheduleCollectionSnapshot(id: id, title: title, month: month, kind: kind)
+        return ScheduleCollectionSnapshot(
+            id: id,
+            title: title,
+            month: month,
+            kind: kind,
+            teamID: (record[Field.teamID] as? String).flatMap(UUID.init(uuidString:)),
+            teamName: record[Field.teamName] as? String
+        )
     }
 
     private func entrySnapshot(from record: CKRecord) -> ScheduleEntrySnapshot? {
@@ -393,6 +420,8 @@ actor ScheduleSharingService {
         static let title = "title"
         static let month = "month"
         static let kind = "kind"
+        static let teamID = "teamID"
+        static let teamName = "teamName"
         static let startDate = "startDate"
         static let endDate = "endDate"
         static let details = "details"
