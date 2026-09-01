@@ -1,0 +1,382 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		100000000000000000000001 /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000001 /* AppSecrets.swift */; };
+		100000000000000000000002 /* BrainNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* BrainNote.swift */; };
+		100000000000000000000003 /* BrainNoteIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* BrainNoteIntents.swift */; };
+		100000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000004 /* ContentView.swift */; };
+		100000000000000000000005 /* NoteProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000005 /* NoteProcessor.swift */; };
+		100000000000000000000006 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000006 /* NotificationScheduler.swift */; };
+		100000000000000000000007 /* ScratchpadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000007 /* ScratchpadApp.swift */; };
+		100000000000000000000008 /* BrainNoteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000008 /* BrainNoteWidget.swift */; };
+		100000000000000000000009 /* BrainNoteWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000C /* BrainNoteWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		10000000000000000000000A /* WidgetScheduleStore.swift in App Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D /* WidgetScheduleStore.swift */; };
+		10000000000000000000000B /* WidgetScheduleStore.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D /* WidgetScheduleStore.swift */; };
+		10000000000000000000000C /* WorkScheduleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E /* WorkScheduleParser.swift */; };
+		10000000000000000000000D /* ScheduleEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000F /* ScheduleEntry.swift */; };
+		10000000000000000000000E /* ScheduleCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000010 /* ScheduleCollection.swift */; };
+		10000000000000000000000F /* ScheduleSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011 /* ScheduleSharingService.swift */; };
+		100000000000000000000010 /* ScheduleTimePreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012 /* ScheduleTimePreset.swift */; };
+		100000000000000000000011 /* ScheduleSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000013 /* ScheduleSearch.swift */; };
+		100000000000000000000012 /* SwipeActionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000014 /* SwipeActionCard.swift */; };
+		100000000000000000000013 /* ScheduleDashboardComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000015 /* ScheduleDashboardComponents.swift */; };
+		100000000000000000000014 /* RelatedThoughtsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000016 /* RelatedThoughtsSection.swift */; };
+		100000000000000000000015 /* CanvasNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* CanvasNavigationBar.swift */; };
+		100000000000000000000016 /* NoteConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000018 /* NoteConnections.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		600000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 500000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 400000000000000000000002;
+			remoteInfo = BrainNoteWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		330000000000000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				100000000000000000000009 /* BrainNoteWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000001 /* AppSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSecrets.swift; sourceTree = "<group>"; };
+		000000000000000000000002 /* BrainNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainNote.swift; sourceTree = "<group>"; };
+		000000000000000000000003 /* BrainNoteIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainNoteIntents.swift; sourceTree = "<group>"; };
+		000000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		000000000000000000000005 /* NoteProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteProcessor.swift; sourceTree = "<group>"; };
+		000000000000000000000006 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
+		000000000000000000000007 /* ScratchpadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadApp.swift; sourceTree = "<group>"; };
+		000000000000000000000008 /* BrainNoteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainNoteWidget.swift; sourceTree = "<group>"; };
+		000000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "App Info.plist"; path = BrainNoteApp/Info.plist; sourceTree = "<group>"; };
+		00000000000000000000000A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Widget Info.plist"; path = BrainNoteWidgetExtension/Info.plist; sourceTree = "<group>"; };
+		00000000000000000000000B /* BrainNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BrainNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000000C /* BrainNoteWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BrainNoteWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000000D /* WidgetScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetScheduleStore.swift; sourceTree = "<group>"; };
+		00000000000000000000000E /* WorkScheduleParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkScheduleParser.swift; sourceTree = "<group>"; };
+		00000000000000000000000F /* ScheduleEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEntry.swift; sourceTree = "<group>"; };
+		000000000000000000000010 /* ScheduleCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCollection.swift; sourceTree = "<group>"; };
+		000000000000000000000011 /* ScheduleSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSharingService.swift; sourceTree = "<group>"; };
+		000000000000000000000012 /* ScheduleTimePreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleTimePreset.swift; sourceTree = "<group>"; };
+		000000000000000000000013 /* ScheduleSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCore/ScheduleSearch.swift; sourceTree = "<group>"; };
+		000000000000000000000014 /* SwipeActionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeActionCard.swift; sourceTree = "<group>"; };
+		000000000000000000000015 /* ScheduleDashboardComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleDashboardComponents.swift; sourceTree = "<group>"; };
+		000000000000000000000016 /* RelatedThoughtsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelatedThoughtsSection.swift; sourceTree = "<group>"; };
+		000000000000000000000017 /* CanvasNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNavigationBar.swift; sourceTree = "<group>"; };
+		000000000000000000000018 /* NoteConnections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCore/NoteConnections.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		310000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		310000000000000000000002 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		200000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000D /* WidgetScheduleStore.swift */,
+				200000000000000000000003 /* BrainNote App */,
+				200000000000000000000004 /* BrainNote Widget */,
+				200000000000000000000002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		200000000000000000000002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000B /* BrainNote.app */,
+				00000000000000000000000C /* BrainNoteWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		200000000000000000000003 /* BrainNote App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000001 /* AppSecrets.swift */,
+				000000000000000000000002 /* BrainNote.swift */,
+				000000000000000000000003 /* BrainNoteIntents.swift */,
+				000000000000000000000004 /* ContentView.swift */,
+				000000000000000000000005 /* NoteProcessor.swift */,
+				000000000000000000000006 /* NotificationScheduler.swift */,
+				00000000000000000000000E /* WorkScheduleParser.swift */,
+				00000000000000000000000F /* ScheduleEntry.swift */,
+				000000000000000000000010 /* ScheduleCollection.swift */,
+				000000000000000000000011 /* ScheduleSharingService.swift */,
+				000000000000000000000012 /* ScheduleTimePreset.swift */,
+				000000000000000000000013 /* ScheduleSearch.swift */,
+				000000000000000000000014 /* SwipeActionCard.swift */,
+				000000000000000000000015 /* ScheduleDashboardComponents.swift */,
+				000000000000000000000016 /* RelatedThoughtsSection.swift */,
+				000000000000000000000017 /* CanvasNavigationBar.swift */,
+				000000000000000000000018 /* NoteConnections.swift */,
+				000000000000000000000007 /* ScratchpadApp.swift */,
+				000000000000000000000009 /* App Info.plist */,
+			);
+			name = "BrainNote App";
+			sourceTree = "<group>";
+		};
+		200000000000000000000004 /* BrainNote Widget */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000008 /* BrainNoteWidget.swift */,
+				00000000000000000000000A /* Widget Info.plist */,
+			);
+			name = "BrainNote Widget";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		400000000000000000000001 /* BrainNote */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 800000000000000000000001 /* Build configuration list for PBXNativeTarget "BrainNote" */;
+			buildPhases = (
+				300000000000000000000001 /* Sources */,
+				310000000000000000000001 /* Frameworks */,
+				320000000000000000000001 /* Resources */,
+				330000000000000000000001 /* Embed App Extensions */,
+			);
+			buildRules = ();
+			dependencies = (600000000000000000000002 /* PBXTargetDependency */, );
+			name = BrainNote;
+			productName = BrainNote;
+			productReference = 00000000000000000000000B /* BrainNote.app */;
+			productType = "com.apple.product-type.application";
+		};
+		400000000000000000000002 /* BrainNoteWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 800000000000000000000002 /* Build configuration list for PBXNativeTarget "BrainNoteWidget" */;
+			buildPhases = (
+				300000000000000000000002 /* Sources */,
+				310000000000000000000002 /* Frameworks */,
+				320000000000000000000002 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = BrainNoteWidget;
+			productName = BrainNoteWidget;
+			productReference = 00000000000000000000000C /* BrainNoteWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		500000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					400000000000000000000001 = {CreatedOnToolsVersion = 26.5; };
+					400000000000000000000002 = {CreatedOnToolsVersion = 26.5; };
+				};
+			};
+			buildConfigurationList = 800000000000000000000003 /* Build configuration list for PBXProject "BrainNote" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base, );
+			mainGroup = 200000000000000000000001;
+			productRefGroup = 200000000000000000000002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				400000000000000000000001 /* BrainNote */,
+				400000000000000000000002 /* BrainNoteWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		320000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		320000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		300000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000001 /* AppSecrets.swift in Sources */,
+				100000000000000000000002 /* BrainNote.swift in Sources */,
+				100000000000000000000003 /* BrainNoteIntents.swift in Sources */,
+				100000000000000000000004 /* ContentView.swift in Sources */,
+				100000000000000000000005 /* NoteProcessor.swift in Sources */,
+				100000000000000000000006 /* NotificationScheduler.swift in Sources */,
+				100000000000000000000007 /* ScratchpadApp.swift in Sources */,
+				10000000000000000000000A /* WidgetScheduleStore.swift in App Sources */,
+				10000000000000000000000C /* WorkScheduleParser.swift in Sources */,
+				10000000000000000000000D /* ScheduleEntry.swift in Sources */,
+				10000000000000000000000E /* ScheduleCollection.swift in Sources */,
+				10000000000000000000000F /* ScheduleSharingService.swift in Sources */,
+				100000000000000000000010 /* ScheduleTimePreset.swift in Sources */,
+				100000000000000000000011 /* ScheduleSearch.swift in Sources */,
+				100000000000000000000012 /* SwipeActionCard.swift in Sources */,
+				100000000000000000000013 /* ScheduleDashboardComponents.swift in Sources */,
+				100000000000000000000014 /* RelatedThoughtsSection.swift in Sources */,
+				100000000000000000000015 /* CanvasNavigationBar.swift in Sources */,
+				100000000000000000000016 /* NoteConnections.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		300000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000008 /* BrainNoteWidget.swift in Sources */,
+				10000000000000000000000B /* WidgetScheduleStore.swift in Widget Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		600000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 400000000000000000000002 /* BrainNoteWidget */;
+			targetProxy = 600000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		700000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = BrainNoteApp/BrainNote.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BrainNoteApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.won.BrainNote;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		700000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = BrainNoteApp/BrainNote.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BrainNoteApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.won.BrainNote;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		700000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = BrainNoteWidgetExtension/BrainNoteWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BrainNoteWidgetExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.won.BrainNote.Widget;
+				PRODUCT_NAME = BrainNoteWidget;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		700000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = BrainNoteWidgetExtension/BrainNoteWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BrainNoteWidgetExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.won.BrainNote.Widget;
+				PRODUCT_NAME = BrainNoteWidget;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		700000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		700000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		800000000000000000000001 /* Build configuration list for PBXNativeTarget "BrainNote" */ = {isa = XCConfigurationList; buildConfigurations = (700000000000000000000001 /* Debug */, 700000000000000000000002 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		800000000000000000000002 /* Build configuration list for PBXNativeTarget "BrainNoteWidget" */ = {isa = XCConfigurationList; buildConfigurations = (700000000000000000000003 /* Debug */, 700000000000000000000004 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		800000000000000000000003 /* Build configuration list for PBXProject "BrainNote" */ = {isa = XCConfigurationList; buildConfigurations = (700000000000000000000005 /* Debug */, 700000000000000000000006 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = 500000000000000000000001 /* Project object */;
+}
