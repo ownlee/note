@@ -3,10 +3,6 @@ import SwiftUI
 
 @main
 struct ScratchpadApp: App {
-    #if canImport(UIKit)
-    @UIApplicationDelegateAdaptor(BrainNoteAppDelegate.self) private var appDelegate
-    #endif
-
     private let modelContainer: ModelContainer
 
     init() {
@@ -16,9 +12,7 @@ struct ScratchpadApp: App {
                 for: BrainNote.self,
                 ScheduleEntry.self,
                 ScheduleCollection.self,
-                ScheduleTeamWorkspace.self,
                 ScheduleTimePreset.self,
-                ScheduleTeamMember.self,
                 configurations: configuration
             )
         } catch {

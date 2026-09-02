@@ -21,7 +21,6 @@
 		10000000000000000000000C /* WorkScheduleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E /* WorkScheduleParser.swift */; };
 		10000000000000000000000D /* ScheduleEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000F /* ScheduleEntry.swift */; };
 		10000000000000000000000E /* ScheduleCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000010 /* ScheduleCollection.swift */; };
-		10000000000000000000000F /* ScheduleSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011 /* ScheduleSharingService.swift */; };
 		100000000000000000000010 /* ScheduleTimePreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012 /* ScheduleTimePreset.swift */; };
 		100000000000000000000011 /* ScheduleSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000013 /* ScheduleSearch.swift */; };
 		100000000000000000000012 /* SwipeActionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000014 /* SwipeActionCard.swift */; };
@@ -29,6 +28,19 @@
 		100000000000000000000014 /* RelatedThoughtsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000016 /* RelatedThoughtsSection.swift */; };
 		100000000000000000000015 /* CanvasNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* CanvasNavigationBar.swift */; };
 		100000000000000000000016 /* NoteConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000018 /* NoteConnections.swift */; };
+		100000000000000000000017 /* BatchScheduleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000019 /* BatchScheduleSheet.swift */; };
+		100000000000000000000018 /* ContentView+Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001A /* ContentView+Composer.swift */; };
+		100000000000000000000019 /* ContentView+Dashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001B /* ContentView+Dashboard.swift */; };
+		10000000000000000000001A /* ContentView+Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001C /* ContentView+Notifications.swift */; };
+		10000000000000000000001B /* ContentView+NoteLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001D /* ContentView+NoteLifecycle.swift */; };
+		10000000000000000000001C /* ContentView+ScheduleSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001E /* ContentView+ScheduleSync.swift */; };
+		10000000000000000000001D /* ContentViewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001F /* ContentViewModels.swift */; };
+		10000000000000000000001E /* NoteCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000020 /* NoteCardView.swift */; };
+		10000000000000000000001F /* QuickEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000021 /* QuickEditSheet.swift */; };
+		100000000000000000000020 /* ScheduleDayEditingSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000022 /* ScheduleDayEditingSheets.swift */; };
+		100000000000000000000021 /* ScheduleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000023 /* ScheduleEditorSheet.swift */; };
+		100000000000000000000022 /* ScheduleImportSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000024 /* ScheduleImportSheets.swift */; };
+		100000000000000000000024 /* ToastViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000026 /* ToastViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,7 +84,6 @@
 		00000000000000000000000E /* WorkScheduleParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkScheduleParser.swift; sourceTree = "<group>"; };
 		00000000000000000000000F /* ScheduleEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEntry.swift; sourceTree = "<group>"; };
 		000000000000000000000010 /* ScheduleCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCollection.swift; sourceTree = "<group>"; };
-		000000000000000000000011 /* ScheduleSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSharingService.swift; sourceTree = "<group>"; };
 		000000000000000000000012 /* ScheduleTimePreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleTimePreset.swift; sourceTree = "<group>"; };
 		000000000000000000000013 /* ScheduleSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCore/ScheduleSearch.swift; sourceTree = "<group>"; };
 		000000000000000000000014 /* SwipeActionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeActionCard.swift; sourceTree = "<group>"; };
@@ -80,6 +91,19 @@
 		000000000000000000000016 /* RelatedThoughtsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelatedThoughtsSection.swift; sourceTree = "<group>"; };
 		000000000000000000000017 /* CanvasNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNavigationBar.swift; sourceTree = "<group>"; };
 		000000000000000000000018 /* NoteConnections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCore/NoteConnections.swift; sourceTree = "<group>"; };
+		000000000000000000000019 /* BatchScheduleSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchScheduleSheet.swift; sourceTree = "<group>"; };
+		00000000000000000000001A /* ContentView+Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView+Composer.swift"; sourceTree = "<group>"; };
+		00000000000000000000001B /* ContentView+Dashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView+Dashboard.swift"; sourceTree = "<group>"; };
+		00000000000000000000001C /* ContentView+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView+Notifications.swift"; sourceTree = "<group>"; };
+		00000000000000000000001D /* ContentView+NoteLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView+NoteLifecycle.swift"; sourceTree = "<group>"; };
+		00000000000000000000001E /* ContentView+ScheduleSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView+ScheduleSync.swift"; sourceTree = "<group>"; };
+		00000000000000000000001F /* ContentViewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModels.swift; sourceTree = "<group>"; };
+		000000000000000000000020 /* NoteCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCardView.swift; sourceTree = "<group>"; };
+		000000000000000000000021 /* QuickEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEditSheet.swift; sourceTree = "<group>"; };
+		000000000000000000000022 /* ScheduleDayEditingSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleDayEditingSheets.swift; sourceTree = "<group>"; };
+		000000000000000000000023 /* ScheduleEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEditorSheet.swift; sourceTree = "<group>"; };
+		000000000000000000000024 /* ScheduleImportSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleImportSheets.swift; sourceTree = "<group>"; };
+		000000000000000000000026 /* ToastViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,7 +143,6 @@
 				00000000000000000000000E /* WorkScheduleParser.swift */,
 				00000000000000000000000F /* ScheduleEntry.swift */,
 				000000000000000000000010 /* ScheduleCollection.swift */,
-				000000000000000000000011 /* ScheduleSharingService.swift */,
 				000000000000000000000012 /* ScheduleTimePreset.swift */,
 				000000000000000000000013 /* ScheduleSearch.swift */,
 				000000000000000000000014 /* SwipeActionCard.swift */,
@@ -127,6 +150,19 @@
 				000000000000000000000016 /* RelatedThoughtsSection.swift */,
 				000000000000000000000017 /* CanvasNavigationBar.swift */,
 				000000000000000000000018 /* NoteConnections.swift */,
+				000000000000000000000019 /* BatchScheduleSheet.swift */,
+				00000000000000000000001A /* ContentView+Composer.swift */,
+				00000000000000000000001B /* ContentView+Dashboard.swift */,
+				00000000000000000000001C /* ContentView+Notifications.swift */,
+				00000000000000000000001D /* ContentView+NoteLifecycle.swift */,
+				00000000000000000000001E /* ContentView+ScheduleSync.swift */,
+				00000000000000000000001F /* ContentViewModels.swift */,
+				000000000000000000000020 /* NoteCardView.swift */,
+				000000000000000000000021 /* QuickEditSheet.swift */,
+				000000000000000000000022 /* ScheduleDayEditingSheets.swift */,
+				000000000000000000000023 /* ScheduleEditorSheet.swift */,
+				000000000000000000000024 /* ScheduleImportSheets.swift */,
+				000000000000000000000026 /* ToastViews.swift */,
 				000000000000000000000007 /* ScratchpadApp.swift */,
 				000000000000000000000009 /* App Info.plist */,
 			);
@@ -227,7 +263,6 @@
 				10000000000000000000000C /* WorkScheduleParser.swift in Sources */,
 				10000000000000000000000D /* ScheduleEntry.swift in Sources */,
 				10000000000000000000000E /* ScheduleCollection.swift in Sources */,
-				10000000000000000000000F /* ScheduleSharingService.swift in Sources */,
 				100000000000000000000010 /* ScheduleTimePreset.swift in Sources */,
 				100000000000000000000011 /* ScheduleSearch.swift in Sources */,
 				100000000000000000000012 /* SwipeActionCard.swift in Sources */,
@@ -235,6 +270,19 @@
 				100000000000000000000014 /* RelatedThoughtsSection.swift in Sources */,
 				100000000000000000000015 /* CanvasNavigationBar.swift in Sources */,
 				100000000000000000000016 /* NoteConnections.swift in Sources */,
+				100000000000000000000017 /* BatchScheduleSheet.swift in Sources */,
+				100000000000000000000018 /* ContentView+Composer.swift in Sources */,
+				100000000000000000000019 /* ContentView+Dashboard.swift in Sources */,
+				10000000000000000000001A /* ContentView+Notifications.swift in Sources */,
+				10000000000000000000001B /* ContentView+NoteLifecycle.swift in Sources */,
+				10000000000000000000001C /* ContentView+ScheduleSync.swift in Sources */,
+				10000000000000000000001D /* ContentViewModels.swift in Sources */,
+				10000000000000000000001E /* NoteCardView.swift in Sources */,
+				10000000000000000000001F /* QuickEditSheet.swift in Sources */,
+				100000000000000000000020 /* ScheduleDayEditingSheets.swift in Sources */,
+				100000000000000000000021 /* ScheduleEditorSheet.swift in Sources */,
+				100000000000000000000022 /* ScheduleImportSheets.swift in Sources */,
+				100000000000000000000024 /* ToastViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

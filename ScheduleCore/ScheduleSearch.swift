@@ -3,20 +3,12 @@ import Foundation
 public enum ScheduleSearch {
     public static func matches(
         query: String,
-        title: String,
-        assigneeNames: [String],
-        includesAssignees: Bool
+        title: String
     ) -> Bool {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedQuery.isEmpty else { return true }
 
-        if title.localizedCaseInsensitiveContains(normalizedQuery) {
-            return true
-        }
-
-        return includesAssignees && assigneeNames.contains {
-            $0.localizedCaseInsensitiveContains(normalizedQuery)
-        }
+        return title.localizedCaseInsensitiveContains(normalizedQuery)
     }
 
     public static func togglingAll(

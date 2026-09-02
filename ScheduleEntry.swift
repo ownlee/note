@@ -84,16 +84,8 @@ final class ScheduleEntry {
     var details: String?
     var createdAt: Date
     var seriesID: UUID?
-    // Non-nil is the authoritative privacy boundary for team-owned schedules.
-    // Legacy sharingMode remains for migration and CloudKit compatibility.
-    var teamID: UUID?
-    // Optional on disk so notes created before team sharing migrate safely.
-    // A nil value is treated as personal throughout the UI.
-    var sharingMode: ScheduleSharingMode?
-    var cloudKitRecordName: String?
     // Optional so existing stores migrate without rewriting old schedules.
     var labelColor: ScheduleLabelColor?
-    var assigneeText: String?
 
     init(
         id: UUID = UUID(),
@@ -104,11 +96,7 @@ final class ScheduleEntry {
         details: String? = nil,
         createdAt: Date = .now,
         seriesID: UUID? = nil,
-        teamID: UUID? = nil,
-        sharingMode: ScheduleSharingMode = .personal,
-        cloudKitRecordName: String? = nil,
-        labelColor: ScheduleLabelColor? = nil,
-        assigneeText: String? = nil
+        labelColor: ScheduleLabelColor? = nil
     ) {
         self.id = id
         self.title = title
@@ -118,36 +106,8 @@ final class ScheduleEntry {
         self.details = details
         self.createdAt = createdAt
         self.seriesID = seriesID
-        self.teamID = teamID
-        self.sharingMode = sharingMode
-        self.cloudKitRecordName = cloudKitRecordName
         self.labelColor = labelColor
-        self.assigneeText = assigneeText
     }
-
 
     var tint: Color { labelColor?.color ?? kind.tint }
-
-    var resolvedSharingMode: ScheduleSharingMode {
-        teamID == nil ? .personal : .team
-    }
-
-    func assignOwnership(_ mode: ScheduleSharingMode, teamID: UUID? = nil) {
-        switch mode {
-        case .personal:
-            self.teamID = nil
-            sharingMode = .personal
-            assigneeText = nil
-        case .team:
-            self.teamID = teamID ?? seriesID ?? id
-            sharingMode = .team
-        }
-    }
-
-    var assigneeNames: [String] {
-        (assigneeText ?? "")
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-    }
 }
