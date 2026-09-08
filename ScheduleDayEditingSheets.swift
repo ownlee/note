@@ -143,11 +143,10 @@ struct BulkScheduleEditSheet: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button("Cancel") { dismiss() }
-        }
-        if !selectedIDs.isEmpty {
-            ToolbarItem(placement: .confirmationAction) {
+        ToolbarItem(placement: .confirmationAction) {
+            if selectedIDs.isEmpty {
+                Button("Done") { dismiss() }
+            } else {
                 Button(isSaving ? "Saving…" : "Apply") { Task { await apply() } }
                     .fontWeight(.semibold)
                     .disabled(isSaving)
@@ -597,6 +596,7 @@ struct BulkScheduleEditSheet: View {
         do {
             try modelContext.save()
             selectedIDs.removeAll()
+            selectedDays.removeAll()
             actionMessage = "Deleted \(selected.count) schedules"
             isSaving = false
         } catch {
@@ -613,7 +613,10 @@ struct BulkScheduleEditSheet: View {
 
         do {
             try modelContext.save()
-            dismiss()
+            actionMessage = "Updated \(selected.count) schedules"
+            selectedIDs.removeAll()
+            selectedDays.removeAll()
+            isSaving = false
         } catch {
             saveError = error.localizedDescription
             isSaving = false
