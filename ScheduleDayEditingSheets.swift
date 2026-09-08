@@ -38,6 +38,8 @@ struct BulkScheduleEditSheet: View {
     @State private var presetEditor: ScheduleTimePreset?
     @State private var isNewPresetEditorPresented = false
     @State private var actionMessage: String?
+    @State private var scrollProxy: ScrollViewProxy?
+    private static let scrollTopID = "bulkScheduleTop"
     @State private var dayFrames: [Date: CGRect] = [:]
     @State private var dragVisitedDays: Set<Date> = []
     @State private var dragSelectsDays = true
@@ -120,26 +122,31 @@ struct BulkScheduleEditSheet: View {
     }
 
     private var scrollContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                organizeFilters
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Color.clear.frame(height: 0).id(Self.scrollTopID)
 
-                addScheduleCard
+                    organizeFilters
 
-                if let actionMessage {
-                    Label(actionMessage, systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.green)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 11)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                    addScheduleCard
+
+                    if let actionMessage {
+                        Label(actionMessage, systemImage: "checkmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 11)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    organizeSection
                 }
-
-                organizeSection
+                .padding(20)
+                .padding(.bottom, 24)
             }
-            .padding(20)
-            .padding(.bottom, 24)
+            .onAppear { scrollProxy = proxy }
         }
     }
 
@@ -539,6 +546,12 @@ struct BulkScheduleEditSheet: View {
         let date: Date?
     }
 
+    private func scrollToTop() {
+        withAnimation(.snappy) {
+            scrollProxy?.scrollTo(Self.scrollTopID, anchor: .top)
+        }
+    }
+
     @MainActor
     private func addFavoriteSchedules() async {
         guard let preset = selectedPreset else { return }
@@ -582,6 +595,7 @@ struct BulkScheduleEditSheet: View {
             actionMessage = "Added \(newEntries.count) schedules"
             selectedDays.removeAll()
             selectedPresetID = nil
+            scrollToTop()
         } catch {
             saveError = error.localizedDescription
         }
@@ -599,6 +613,7 @@ struct BulkScheduleEditSheet: View {
             selectedDays.removeAll()
             actionMessage = "Deleted \(selected.count) schedules"
             isSaving = false
+            scrollToTop()
         } catch {
             saveError = error.localizedDescription
             isSaving = false
@@ -617,6 +632,7 @@ struct BulkScheduleEditSheet: View {
             selectedIDs.removeAll()
             selectedDays.removeAll()
             isSaving = false
+            scrollToTop()
         } catch {
             saveError = error.localizedDescription
             isSaving = false
