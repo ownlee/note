@@ -58,6 +58,7 @@ let package = Package(
                 "ScheduleTimePreset.swift",
                 "SwipeActionCard.swift",
                 "ToastViews.swift",
+                "WidgetScheduleStore.swift",
                 "WorkScheduleParser.swift"
             ]
         )
