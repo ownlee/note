@@ -105,6 +105,9 @@ struct ContentView: View {
             }
             .background(canvasBackground)
             .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(
+                TapGesture().onEnded { isComposerFocused = false }
+            )
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 composer
             }
