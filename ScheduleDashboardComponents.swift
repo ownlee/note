@@ -11,12 +11,10 @@ struct MonthlyScheduleCalendar: View {
     @State private var isMonthPickerPresented = false
     @State private var pickerYear = Calendar.current.component(.year, from: .now)
     @State private var pickerMonth = Calendar.current.component(.month, from: .now)
-    @State private var pageSelection = 1
 
     private let calendar = Calendar.current
     private let weekdaySymbols = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
-    private let gridHeight: CGFloat = 6 * 75 + 5 * 5 + 20
 
     var body: some View {
         VStack(spacing: 14) {
@@ -62,29 +60,13 @@ struct MonthlyScheduleCalendar: View {
                 .background(Color.indigo.opacity(0.14), in: Circle())
                 .foregroundStyle(.indigo)
                 .accessibilityLabel("Add or import schedule")
+                monthStepButton("chevron.left", value: -1, label: "Previous month")
+                monthStepButton("chevron.right", value: 1, label: "Next month")
             }
 
             weekdayHeader
 
-            TabView(selection: $pageSelection) {
-                ForEach(0..<3) { page in
-                    monthGrid(for: pagedMonths[page])
-                        .tag(page)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: gridHeight)
-            .onChange(of: pageSelection) { _, newValue in
-                guard newValue != 1 else { return }
-                let targetMonth = pagedMonths[newValue]
-                DispatchQueue.main.async {
-                    month = targetMonth
-                    selectedDay = entries.first(where: {
-                        calendar.isDate($0.startDate, equalTo: targetMonth, toGranularity: .month)
-                    })?.startDate
-                    pageSelection = 1
-                }
-            }
+            monthGrid(for: normalizedMonth)
         }
         .padding(16)
         .background {
@@ -150,12 +132,6 @@ struct MonthlyScheduleCalendar: View {
                     .frame(maxWidth: .infinity)
             }
         }
-    }
-
-    /// Three consecutive months centered on the current one, indexed to match
-    /// `pageSelection` (0 = previous, 1 = current, 2 = next).
-    private var pagedMonths: [Date] {
-        [-1, 0, 1].map { calendar.date(byAdding: .month, value: $0, to: normalizedMonth) ?? normalizedMonth }
     }
 
     private func monthGrid(for month: Date) -> some View {
@@ -235,13 +211,28 @@ struct MonthlyScheduleCalendar: View {
     private func goToMonth(year: Int, month monthValue: Int) {
         guard let newMonth = calendar.date(from: DateComponents(year: year, month: monthValue, day: 1))
         else { return }
-        pageSelection = 1
         withAnimation(.snappy) {
             month = newMonth
             selectedDay = entries.first(where: {
                 calendar.isDate($0.startDate, equalTo: newMonth, toGranularity: .month)
             })?.startDate
         }
+    }
+
+    private func monthStepButton(_ image: String, value: Int, label: String) -> some View {
+        Button {
+            withAnimation(.snappy) {
+                month = calendar.date(byAdding: .month, value: value, to: normalizedMonth) ?? month
+                selectedDay = entries.first(where: {
+                    calendar.isDate($0.startDate, equalTo: month, toGranularity: .month)
+                })?.startDate
+            }
+        } label: {
+            Image(systemName: image).frame(width: 30, height: 30)
+        }
+        .buttonStyle(.plain)
+        .background(.primary.opacity(0.06), in: Circle())
+        .accessibilityLabel(label)
     }
 
     private var normalizedMonth: Date {
