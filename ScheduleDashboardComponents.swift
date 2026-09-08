@@ -11,10 +11,12 @@ struct MonthlyScheduleCalendar: View {
     @State private var isMonthPickerPresented = false
     @State private var pickerYear = Calendar.current.component(.year, from: .now)
     @State private var pickerMonth = Calendar.current.component(.month, from: .now)
+    @State private var pageSelection = 1
 
     private let calendar = Calendar.current
     private let weekdaySymbols = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+    private let gridHeight: CGFloat = 6 * 75 + 5 * 5 + 20
 
     var body: some View {
         VStack(spacing: 14) {
@@ -62,23 +64,27 @@ struct MonthlyScheduleCalendar: View {
                 .accessibilityLabel("Add or import schedule")
             }
 
-            LazyVGrid(columns: columns, spacing: 5) {
-                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
-                    Text(symbol)
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .foregroundStyle(index == 0 ? Color.red : (index == 6 ? Color.blue : Color.secondary))
-                        .frame(maxWidth: .infinity)
-                }
+            weekdayHeader
 
-                ForEach(monthCells) { cell in
-                    if let date = cell.date {
-                        dayCell(date)
-                    } else {
-                        Color.clear.frame(height: 70)
-                    }
+            TabView(selection: $pageSelection) {
+                ForEach(0..<3) { page in
+                    monthGrid(for: pagedMonths[page])
+                        .tag(page)
                 }
             }
-            .simultaneousGesture(monthSwipeGesture)
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: gridHeight)
+            .onChange(of: pageSelection) { _, newValue in
+                guard newValue != 1 else { return }
+                let targetMonth = pagedMonths[newValue]
+                DispatchQueue.main.async {
+                    month = targetMonth
+                    selectedDay = entries.first(where: {
+                        calendar.isDate($0.startDate, equalTo: targetMonth, toGranularity: .month)
+                    })?.startDate
+                    pageSelection = 1
+                }
+            }
         }
         .padding(16)
         .background {
@@ -135,12 +141,33 @@ struct MonthlyScheduleCalendar: View {
         }
     }
 
-    private var monthSwipeGesture: some Gesture {
-        DragGesture(minimumDistance: 24)
-            .onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                changeMonth(by: value.translation.width < 0 ? 1 : -1)
+    private var weekdayHeader: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
+                Text(symbol)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(index == 0 ? Color.red : (index == 6 ? Color.blue : Color.secondary))
+                    .frame(maxWidth: .infinity)
             }
+        }
+    }
+
+    /// Three consecutive months centered on the current one, indexed to match
+    /// `pageSelection` (0 = previous, 1 = current, 2 = next).
+    private var pagedMonths: [Date] {
+        [-1, 0, 1].map { calendar.date(byAdding: .month, value: $0, to: normalizedMonth) ?? normalizedMonth }
+    }
+
+    private func monthGrid(for month: Date) -> some View {
+        LazyVGrid(columns: columns, spacing: 5) {
+            ForEach(monthCells(for: month)) { cell in
+                if let date = cell.date {
+                    dayCell(date)
+                } else {
+                    Color.clear.frame(height: 70)
+                }
+            }
+        }
     }
 
     private var monthSymbols: [String] {
@@ -205,18 +232,10 @@ struct MonthlyScheduleCalendar: View {
         .accessibilityLabel("\(date.formatted(.dateTime.month(.wide).day())), \(dayEntries.count) schedules")
     }
 
-    private func changeMonth(by value: Int) {
-        withAnimation(.snappy) {
-            month = calendar.date(byAdding: .month, value: value, to: normalizedMonth) ?? month
-            selectedDay = entries.first(where: {
-                calendar.isDate($0.startDate, equalTo: month, toGranularity: .month)
-            })?.startDate
-        }
-    }
-
     private func goToMonth(year: Int, month monthValue: Int) {
         guard let newMonth = calendar.date(from: DateComponents(year: year, month: monthValue, day: 1))
         else { return }
+        pageSelection = 1
         withAnimation(.snappy) {
             month = newMonth
             selectedDay = entries.first(where: {
@@ -241,12 +260,12 @@ struct MonthlyScheduleCalendar: View {
         return "\(label) · \(monthlyEntries.count) events"
     }
 
-    private var monthCells: [MonthCell] {
-        guard let range = calendar.range(of: .day, in: .month, for: normalizedMonth) else { return [] }
-        let leading = calendar.component(.weekday, from: normalizedMonth) - 1
+    private func monthCells(for month: Date) -> [MonthCell] {
+        guard let range = calendar.range(of: .day, in: .month, for: month) else { return [] }
+        let leading = calendar.component(.weekday, from: month) - 1
         var result = (0..<leading).map { MonthCell(id: $0, date: nil) }
         result += range.enumerated().compactMap { offset, day in
-            calendar.date(bySetting: .day, value: day, of: normalizedMonth).map {
+            calendar.date(bySetting: .day, value: day, of: month).map {
                 MonthCell(id: leading + offset, date: $0)
             }
         }
