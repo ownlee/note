@@ -8,6 +8,10 @@ struct MonthlyScheduleCalendar: View {
     let onBulkEdit: () -> Void
     let onImportImage: () -> Void
 
+    @State private var isMonthPickerPresented = false
+    @State private var pickerYear = Calendar.current.component(.year, from: .now)
+    @State private var pickerMonth = Calendar.current.component(.month, from: .now)
+
     private let calendar = Calendar.current
     private let weekdaySymbols = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
@@ -15,13 +19,28 @@ struct MonthlyScheduleCalendar: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(normalizedMonth.formatted(.dateTime.month(.wide).year()))
-                        .font(.title3.weight(.bold))
-                    Text(monthSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Button {
+                    pickerYear = calendar.component(.year, from: normalizedMonth)
+                    pickerMonth = calendar.component(.month, from: normalizedMonth)
+                    isMonthPickerPresented = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(normalizedMonth.formatted(.dateTime.month(.wide).year()))
+                                .font(.title3.weight(.bold))
+                            Image(systemName: "chevron.down")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(monthSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+                .accessibilityHint("Opens a month and year picker")
+
                 Spacer()
                 Menu {
                     Button(action: onBulkEdit) {
@@ -41,8 +60,6 @@ struct MonthlyScheduleCalendar: View {
                 .background(Color.indigo.opacity(0.14), in: Circle())
                 .foregroundStyle(.indigo)
                 .accessibilityLabel("Add or import schedule")
-                monthButton("chevron.left", value: -1, label: "Previous month")
-                monthButton("chevron.right", value: 1, label: "Next month")
             }
 
             LazyVGrid(columns: columns, spacing: 5) {
@@ -61,6 +78,7 @@ struct MonthlyScheduleCalendar: View {
                     }
                 }
             }
+            .simultaneousGesture(monthSwipeGesture)
         }
         .padding(16)
         .background {
@@ -76,6 +94,64 @@ struct MonthlyScheduleCalendar: View {
             month = normalizedMonth
             if selectedDay == nil { selectedDay = monthlyEntries.first?.startDate }
         }
+        .sheet(isPresented: $isMonthPickerPresented) {
+            monthYearPicker
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var monthYearPicker: some View {
+        NavigationStack {
+            HStack(spacing: 0) {
+                Picker("Month", selection: $pickerMonth) {
+                    ForEach(1...12, id: \.self) { value in
+                        Text(monthSymbols[value - 1]).tag(value)
+                    }
+                }
+                .pickerStyle(.wheel)
+
+                Picker("Year", selection: $pickerYear) {
+                    ForEach(yearRange, id: \.self) { value in
+                        Text(String(value)).tag(value)
+                    }
+                }
+                .pickerStyle(.wheel)
+            }
+            .navigationTitle("Jump to Month")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isMonthPickerPresented = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        goToMonth(year: pickerYear, month: pickerMonth)
+                        isMonthPickerPresented = false
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+
+    private var monthSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                changeMonth(by: value.translation.width < 0 ? 1 : -1)
+            }
+    }
+
+    private var monthSymbols: [String] {
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        return formatter.standaloneMonthSymbols
+    }
+
+    private var yearRange: [Int] {
+        let currentYear = calendar.component(.year, from: .now)
+        return Array((currentYear - 5)...(currentYear + 5))
     }
 
     private func dayCell(_ date: Date) -> some View {
@@ -129,20 +205,24 @@ struct MonthlyScheduleCalendar: View {
         .accessibilityLabel("\(date.formatted(.dateTime.month(.wide).day())), \(dayEntries.count) schedules")
     }
 
-    private func monthButton(_ image: String, value: Int, label: String) -> some View {
-        Button {
-            withAnimation(.snappy) {
-                month = calendar.date(byAdding: .month, value: value, to: normalizedMonth) ?? month
-                selectedDay = entries.first(where: {
-                    calendar.isDate($0.startDate, equalTo: month, toGranularity: .month)
-                })?.startDate
-            }
-        } label: {
-            Image(systemName: image).frame(width: 34, height: 34)
+    private func changeMonth(by value: Int) {
+        withAnimation(.snappy) {
+            month = calendar.date(byAdding: .month, value: value, to: normalizedMonth) ?? month
+            selectedDay = entries.first(where: {
+                calendar.isDate($0.startDate, equalTo: month, toGranularity: .month)
+            })?.startDate
         }
-        .buttonStyle(.plain)
-        .background(.primary.opacity(0.06), in: Circle())
-        .accessibilityLabel(label)
+    }
+
+    private func goToMonth(year: Int, month monthValue: Int) {
+        guard let newMonth = calendar.date(from: DateComponents(year: year, month: monthValue, day: 1))
+        else { return }
+        withAnimation(.snappy) {
+            month = newMonth
+            selectedDay = entries.first(where: {
+                calendar.isDate($0.startDate, equalTo: newMonth, toGranularity: .month)
+            })?.startDate
+        }
     }
 
     private var normalizedMonth: Date {
