@@ -107,22 +107,31 @@ struct NoteCardView: View {
     @State private var isExpanded = false
 
     /// Notes shorter than this read as a single glance and get the post-it,
-    /// single-line row treatment instead of the full note-style card.
+    /// single-line row treatment instead of the full note-style card. Tags don't
+    /// disqualify a short note — the AI tags almost everything, short or not.
     private var isShortNote: Bool {
         note.rawText.count <= 24 && !note.rawText.contains("\n")
-            && note.eventDate == nil && note.tags.isEmpty
+            && note.eventDate == nil
             && note.suggestedIntent == nil && note.processingState != .failed
     }
 
     /// The AI's paragraph-reorganized rewrite when available, split on blank lines.
-    /// Falls back to the raw text (as one block) while processing hasn't produced one yet.
+    /// Falls back to single line breaks (e.g. pasted bullet-style text with no blank
+    /// lines between them), then to the raw text as one block.
     private var paragraphs: [String] {
         let source = (note.formattedText?.isEmpty == false) ? note.formattedText! : note.rawText
-        let split = source
-            .components(separatedBy: "\n\n")
+        let byBlankLine = nonEmptyLines(source, separatedBy: "\n\n")
+        if byBlankLine.count > 1 { return byBlankLine }
+        let bySingleLine = nonEmptyLines(source, separatedBy: "\n")
+        if bySingleLine.count > 1 { return bySingleLine }
+        return byBlankLine.isEmpty ? [note.rawText] : byBlankLine
+    }
+
+    private func nonEmptyLines(_ text: String, separatedBy separator: String) -> [String] {
+        text
+            .components(separatedBy: separator)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        return split.isEmpty ? [note.rawText] : split
     }
 
     private var needsExpansion: Bool { paragraphs.count >= 3 }
