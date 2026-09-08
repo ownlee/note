@@ -104,12 +104,68 @@ struct NoteCardView: View {
     let onRetryProcessing: () -> Void
     let onResolveIntent: (BrainNoteIntent) -> Void
 
+    /// Notes shorter than this read as a single glance and get the compact,
+    /// single-line row treatment instead of the full card layout.
+    private var isShortNote: Bool {
+        note.rawText.count <= 24 && !note.rawText.contains("\n")
+            && note.eventDate == nil && note.tags.isEmpty
+            && note.suggestedIntent == nil && note.processingState != .failed
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Label(note.category.title, systemImage: note.category.symbolName)
-                    .font(.caption.weight(.semibold))
+        if isShortNote {
+            compactRow
+        } else {
+            fullCard
+        }
+    }
+
+    private var compactRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: note.category.symbolName)
+                .font(.subheadline)
+                .foregroundStyle(note.category.tint)
+                .frame(width: 18)
+
+            if note.category == .actionable, note.processingState == .complete {
+                Button(action: onToggleCompletion) {
+                    Image(systemName: note.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(note.isCompleted ? .green : .secondary)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(note.isCompleted ? "Mark as incomplete" : "Mark as complete")
+            }
+
+            Text(note.rawText)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .strikethrough(note.isCompleted, color: .secondary)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Text(note.createdAt, format: .relative(presentation: .named))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .opacity(note.isCompleted ? 0.6 : 1)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var fullCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: note.category.symbolName)
+                    .font(.caption)
                     .foregroundStyle(note.category.tint)
+                Text(note.category.title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 Spacer(minLength: 8)
 
@@ -118,7 +174,7 @@ struct NoteCardView: View {
                     Button(action: onToggleCompletion) {
                         Image(systemName: note.isCompleted ? "checkmark.circle.fill" : "circle")
                             .font(.title3)
-                            .foregroundStyle(note.isCompleted ? .green : note.category.tint)
+                            .foregroundStyle(note.isCompleted ? .green : .secondary)
                             .contentTransition(.symbolEffect(.replace))
                     }
                     .buttonStyle(.plain)
@@ -130,12 +186,21 @@ struct NoteCardView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text(note.rawText)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .strikethrough(note.isCompleted, color: .secondary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(note.rawText)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .strikethrough(note.isCompleted, color: .secondary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if note.rawText.count > 220 {
+                    Text("Keep reading")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(note.category.tint)
+                }
+            }
 
             if let eventDate = note.eventDate {
                 Divider()
@@ -174,14 +239,13 @@ struct NoteCardView: View {
 
             processingStatus
         }
-        .padding(18)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(note.category.tint.opacity(0.115), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(note.category.tint.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         }
-        .shadow(color: note.category.tint.opacity(0.12), radius: 14, y: 7)
         .opacity(note.isCompleted ? 0.68 : 1)
         .accessibilityElement(children: .contain)
     }
