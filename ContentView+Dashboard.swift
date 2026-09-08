@@ -371,8 +371,8 @@ extension ContentView {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
             ForEach(notes) { note in
                 SwipeActionCard(
-                    leadingAction: destructiveSwipeAction(for: note),
-                    trailingAction: secondarySwipeAction(for: note)
+                    leadingAction: secondarySwipeAction(for: note),
+                    trailingAction: destructiveSwipeAction(for: note)
                 ) {
                     noteCard(note)
                 }

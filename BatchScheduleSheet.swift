@@ -25,7 +25,7 @@ struct BatchScheduleSheet: View {
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
-    private let weekdaySymbols = ["M", "T", "W", "T", "F", "S", "S"]
+    private let weekdaySymbols = ["S", "M", "T", "W", "T", "F", "S"]
 
     var body: some View {
         withPresentations(navigationContent)
@@ -182,7 +182,7 @@ struct BatchScheduleSheet: View {
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
                     Text(symbol)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(index >= 5 ? Color.indigo : Color.secondary)
+                        .foregroundStyle(index == 0 ? Color.red : (index == 6 ? Color.blue : Color.secondary))
                 }
 
                 ForEach(monthCells) { cell in
@@ -247,7 +247,7 @@ struct BatchScheduleSheet: View {
 
     private var monthCells: [MonthCell] {
         guard let range = calendar.range(of: .day, in: .month, for: normalizedMonth) else { return [] }
-        let leading = (calendar.component(.weekday, from: normalizedMonth) + 5) % 7
+        let leading = calendar.component(.weekday, from: normalizedMonth) - 1
         var cells = (0..<leading).map { MonthCell(id: $0, date: nil) }
         cells += range.enumerated().compactMap { offset, day in
             calendar.date(bySetting: .day, value: day, of: normalizedMonth).map {

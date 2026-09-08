@@ -18,15 +18,6 @@ private struct BulkCalendarDayFrameKey: PreferenceKey {
 
 
 struct BulkScheduleEditSheet: View {
-    private enum TaskMode: String, CaseIterable, Identifiable {
-        case add
-        case organize
-
-        var id: Self { self }
-        var title: String { self == .add ? "Add" : "Organize" }
-        var icon: String { self == .add ? "plus.circle.fill" : "slider.horizontal.3" }
-    }
-
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ScheduleEntry.startDate) private var allEntries: [ScheduleEntry]
@@ -46,7 +37,6 @@ struct BulkScheduleEditSheet: View {
     @State private var selectedPresetID: UUID?
     @State private var presetEditor: ScheduleTimePreset?
     @State private var isNewPresetEditorPresented = false
-    @State private var taskMode = TaskMode.add
     @State private var actionMessage: String?
     @State private var dayFrames: [Date: CGRect] = [:]
     @State private var dragVisitedDays: Set<Date> = []
@@ -92,17 +82,6 @@ struct BulkScheduleEditSheet: View {
                 .navigationTitle("Manage Schedules")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
-                .onChange(of: taskMode) { _, newMode in
-                    actionMessage = nil
-                    if newMode == .add {
-                        selectedIDs.removeAll()
-                        scheduleSearchText = ""
-                        colorFilter = nil
-                        weekdayFilter = nil
-                    } else {
-                        selectedPresetID = nil
-                    }
-                }
         }
     }
 
@@ -143,19 +122,7 @@ struct BulkScheduleEditSheet: View {
     private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Picker("Schedule task", selection: $taskMode) {
-                    ForEach(TaskMode.allCases) { mode in
-                        Label(mode.title, systemImage: mode.icon).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityLabel("Schedule task")
-
-                Label(modeGuidance, systemImage: taskMode.icon)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                taskModeCard
+                addScheduleCard
 
                 if let actionMessage {
                     Label(actionMessage, systemImage: "checkmark.circle.fill")
@@ -167,9 +134,7 @@ struct BulkScheduleEditSheet: View {
                         .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                 }
 
-                if taskMode == .organize {
-                    organizeSection
-                }
+                organizeSection
             }
             .padding(20)
             .padding(.bottom, 24)
@@ -181,7 +146,7 @@ struct BulkScheduleEditSheet: View {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { dismiss() }
         }
-        if taskMode == .organize && !selectedIDs.isEmpty {
+        if !selectedIDs.isEmpty {
             ToolbarItem(placement: .confirmationAction) {
                 Button(isSaving ? "Saving…" : "Apply") { Task { await apply() } }
                     .fontWeight(.semibold)
@@ -191,17 +156,13 @@ struct BulkScheduleEditSheet: View {
     }
 
     @ViewBuilder
-    private var taskModeCard: some View {
+    private var addScheduleCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if taskMode == .add {
-                favoriteTimePicker
-                Divider()
-            }
+            favoriteTimePicker
+            Divider()
             bulkMonthPicker
-            if taskMode == .add {
-                Divider()
-                addScheduleButton
-            }
+            Divider()
+            addScheduleButton
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -332,15 +293,6 @@ struct BulkScheduleEditSheet: View {
         presets.first { $0.id == selectedPresetID }
     }
 
-    private var modeGuidance: String {
-        switch taskMode {
-        case .add:
-            "Choose one favorite time, then tap every date that needs it."
-        case .organize:
-            "Tap dates or use filters, then select the schedules you want to change."
-        }
-    }
-
     private var addScheduleButton: some View {
         Button {
             Task { await addFavoriteSchedules() }
@@ -454,10 +406,10 @@ struct BulkScheduleEditSheet: View {
             }
 
             LazyVGrid(columns: bulkColumns, spacing: 6) {
-                ForEach(Array(["M", "T", "W", "T", "F", "S", "S"].enumerated()), id: \.offset) { _, symbol in
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
                     Text(symbol)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(weekendColor(for: index) ?? Color.secondary)
                         .frame(maxWidth: .infinity)
                 }
                 ForEach(monthCells) { cell in
@@ -470,14 +422,20 @@ struct BulkScheduleEditSheet: View {
             }
             .coordinateSpace(name: calendarCoordinateSpace)
             .onPreferenceChange(BulkCalendarDayFrameKey.self) { dayFrames = $0 }
-            .highPriorityGesture(dayRangeSelectionGesture)
+            .simultaneousGesture(dayRangeSelectionGesture)
 
-            if taskMode == .add {
-                Label("Hold a date, then slide across the calendar to select many.", systemImage: "hand.draw")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Label("Tap a date to select it, or hold and slide to select many.", systemImage: "hand.draw")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+    }
+
+    private let weekdaySymbols = ["S", "M", "T", "W", "T", "F", "S"]
+
+    private func weekendColor(for index: Int) -> Color? {
+        if index == 0 { return .red }
+        if index == 6 { return .blue }
+        return nil
     }
 
     private func bulkDayCell(_ day: Date) -> some View {
@@ -485,7 +443,14 @@ struct BulkScheduleEditSheet: View {
         let dayEntries = entries.filter { calendar.isDate($0.startDate, inSameDayAs: day) }
         let isSelected = selectedDays.contains(normalized)
         return Button {
-            if isSelected { selectedDays.remove(normalized) } else { selectedDays.insert(normalized) }
+            let dayIDs = Set(dayEntries.map(\.id))
+            if isSelected {
+                selectedDays.remove(normalized)
+                selectedIDs.subtract(dayIDs)
+            } else {
+                selectedDays.insert(normalized)
+                selectedIDs.formUnion(dayIDs)
+            }
         } label: {
             VStack(spacing: 2) {
                 Text("\(Calendar.current.component(.day, from: day))")
@@ -560,7 +525,7 @@ struct BulkScheduleEditSheet: View {
 
     private var monthCells: [MonthCell] {
         guard let range = calendar.range(of: .day, in: .month, for: normalizedMonth) else { return [] }
-        let leading = (calendar.component(.weekday, from: normalizedMonth) + 5) % 7
+        let leading = calendar.component(.weekday, from: normalizedMonth) - 1
         var cells = (0..<leading).map { MonthCell(id: $0, date: nil) }
         cells += range.enumerated().compactMap { offset, day in
             calendar.date(bySetting: .day, value: day, of: normalizedMonth).map {
@@ -568,13 +533,6 @@ struct BulkScheduleEditSheet: View {
             }
         }
         return cells
-    }
-
-    private func selectWeekdaysWithSchedules() {
-        selectedDays = Set(entries.filter {
-            let weekday = calendar.component(.weekday, from: $0.startDate)
-            return weekday != 1 && weekday != 7
-        }.map { calendar.startOfDay(for: $0.startDate) })
     }
 
     private struct MonthCell: Identifiable {

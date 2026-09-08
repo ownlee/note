@@ -425,7 +425,7 @@ private struct ScheduleImportMonthPreview: View {
     let excludedIDs: Set<UUID>
 
     private let calendar = Calendar.current
-    private let weekdaySymbols = ["M", "T", "W", "T", "F", "S", "S"]
+    private let weekdaySymbols = ["S", "M", "T", "W", "T", "F", "S"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     var body: some View {
@@ -433,7 +433,7 @@ private struct ScheduleImportMonthPreview: View {
             ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
                 Text(symbol)
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(index >= 5 ? Color.indigo : Color.secondary)
+                    .foregroundStyle(index == 0 ? Color.red : (index == 6 ? Color.blue : Color.secondary))
                     .frame(maxWidth: .infinity)
             }
 
@@ -484,7 +484,7 @@ private struct ScheduleImportMonthPreview: View {
     private var monthCells: [MonthCell] {
         let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
         guard let range = calendar.range(of: .day, in: .month, for: normalized) else { return [] }
-        let leading = (calendar.component(.weekday, from: normalized) + 5) % 7
+        let leading = calendar.component(.weekday, from: normalized) - 1
         var cells = (0..<leading).map { MonthCell(id: $0, date: nil) }
         cells += range.enumerated().compactMap { offset, day in
             calendar.date(bySetting: .day, value: day, of: normalized).map {

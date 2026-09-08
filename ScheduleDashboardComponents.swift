@@ -9,7 +9,7 @@ struct MonthlyScheduleCalendar: View {
     let onImportImage: () -> Void
 
     private let calendar = Calendar.current
-    private let weekdaySymbols = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    private let weekdaySymbols = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     var body: some View {
@@ -49,7 +49,7 @@ struct MonthlyScheduleCalendar: View {
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { index, symbol in
                     Text(symbol)
                         .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .foregroundStyle(index >= 5 ? Color.indigo : Color.secondary)
+                        .foregroundStyle(index == 0 ? Color.red : (index == 6 ? Color.blue : Color.secondary))
                         .frame(maxWidth: .infinity)
                 }
 
@@ -82,6 +82,10 @@ struct MonthlyScheduleCalendar: View {
         let dayEntries = entriesForDay(date)
         let isToday = calendar.isDateInToday(date)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
+        let weekday = calendar.component(.weekday, from: date)
+        let dayNumberColor: Color = isToday
+            ? .white
+            : (weekday == 1 ? .red : (weekday == 7 ? .blue : .primary))
 
         return Button {
             selectedDay = date
@@ -89,7 +93,7 @@ struct MonthlyScheduleCalendar: View {
             VStack(spacing: 3) {
                 Text("\(Calendar.current.component(.day, from: date))")
                     .font(.caption.weight(isToday ? .bold : .medium))
-                    .foregroundStyle(isToday ? Color.white : Color.primary)
+                    .foregroundStyle(dayNumberColor)
                     .frame(width: 23, height: 23)
                     .background(isToday ? Color.indigo : Color.clear, in: Circle())
 
@@ -159,7 +163,7 @@ struct MonthlyScheduleCalendar: View {
 
     private var monthCells: [MonthCell] {
         guard let range = calendar.range(of: .day, in: .month, for: normalizedMonth) else { return [] }
-        let leading = (calendar.component(.weekday, from: normalizedMonth) + 5) % 7
+        let leading = calendar.component(.weekday, from: normalizedMonth) - 1
         var result = (0..<leading).map { MonthCell(id: $0, date: nil) }
         result += range.enumerated().compactMap { offset, day in
             calendar.date(bySetting: .day, value: day, of: normalizedMonth).map {
