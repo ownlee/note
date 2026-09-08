@@ -122,6 +122,8 @@ struct BulkScheduleEditSheet: View {
     private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                organizeFilters
+
                 addScheduleCard
 
                 if let actionMessage {
@@ -170,8 +172,6 @@ struct BulkScheduleEditSheet: View {
 
     @ViewBuilder
     private var organizeSection: some View {
-        organizeFilters
-
         HStack {
             Text("\(filteredEntries.count) schedules")
                 .font(.headline)
