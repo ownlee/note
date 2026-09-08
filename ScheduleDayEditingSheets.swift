@@ -488,7 +488,7 @@ struct BulkScheduleEditSheet: View {
             if isSelected { selectedDays.remove(normalized) } else { selectedDays.insert(normalized) }
         } label: {
             VStack(spacing: 2) {
-                Text(day.formatted(.dateTime.day()))
+                Text("\(Calendar.current.component(.day, from: day))")
                     .font(.caption.weight(.bold))
                 if let first = dayEntries.first {
                     Text(MonthlyScheduleCalendar.timeText(first.startDate))

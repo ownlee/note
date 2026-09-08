@@ -87,7 +87,7 @@ struct MonthlyScheduleCalendar: View {
             selectedDay = date
         } label: {
             VStack(spacing: 3) {
-                Text(date.formatted(.dateTime.day()))
+                Text("\(Calendar.current.component(.day, from: date))")
                     .font(.caption.weight(isToday ? .bold : .medium))
                     .foregroundStyle(isToday ? Color.white : Color.primary)
                     .frame(width: 23, height: 23)

@@ -195,7 +195,7 @@ struct BatchScheduleSheet: View {
                                 selectedDays.insert(normalized)
                             }
                         } label: {
-                            Text(day.formatted(.dateTime.day()))
+                            Text("\(Calendar.current.component(.day, from: day))")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(selectedDays.contains(normalized) ? Color.white : Color.primary)
                                 .frame(maxWidth: .infinity, minHeight: 42)

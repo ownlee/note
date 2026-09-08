@@ -52,6 +52,20 @@ enum WorkScheduleParser {
         var calendar = sourceCalendar
         calendar.locale = Locale(identifier: "ko_KR")
 
+        if let recurring = parseRecurringWeeklySchedule(text, calendar: calendar, now: now) {
+            return recurring
+        }
+
+        return parseDatedRoster(text, calendar: calendar, now: now)
+    }
+
+    // Handles a roster written as one line per date, e.g. "9월 스케줄" followed
+    // by "9월 1일 (월)" / "9:00-18:00" pairs.
+    private static func parseDatedRoster(
+        _ text: String,
+        calendar: Calendar,
+        now: Date
+    ) -> ParsedWorkSchedule? {
         let lines = text
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -120,6 +134,84 @@ enum WorkScheduleParser {
             kind: kind,
             shifts: shifts
         )
+    }
+
+    // Handles a recurring weekly pattern, e.g.:
+    //   매주 수요일 11:40-21:40 (15:30-4:30휴게)
+    //   매주 목 금 토 8:30-4:30 (14:30-15:30 휴게)
+    //   매주 일 12:40-21:40 (15-16휴게)
+    //   9월만 이렇게 저장
+    // Each "매주 ..." line names one or more weekdays and a time range; the
+    // rule is expanded to every matching date in the mentioned month.
+    private static let weekdaySymbols: [(Character, Int)] = [
+        ("일", 1), ("월", 2), ("화", 3), ("수", 4), ("목", 5), ("금", 6), ("토", 7),
+    ]
+
+    private static func parseRecurringWeeklySchedule(
+        _ text: String,
+        calendar: Calendar,
+        now: Date
+    ) -> ParsedWorkSchedule? {
+        let lines = text
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let ruleLines = lines.filter { $0.hasPrefix("매주") }
+        guard !ruleLines.isEmpty else { return nil }
+
+        let month = firstMatch(#"(\d{1,2})\s*월"#, in: text)
+            .flatMap { integer(in: text, range: $0.range(at: 1)) }
+            .flatMap { (1...12).contains($0) ? $0 : nil }
+            ?? calendar.component(.month, from: now)
+        let year = calendar.component(.year, from: now)
+
+        guard let monthDate = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+              let dayRange = calendar.range(of: .day, in: .month, for: monthDate) else {
+            return nil
+        }
+
+        struct Rule {
+            let weekdays: Set<Int>
+            let time: (startHour: Int, startMinute: Int, endText: String, detail: String?)
+        }
+
+        var rules: [Rule] = []
+        for line in ruleLines {
+            guard let time = parseTimeRange(line) else { continue }
+            let weekdaySegment = line
+                .replacingOccurrences(of: "요일", with: "")
+                .components(separatedBy: CharacterSet(charactersIn: ":()~-–—"))
+                .first ?? line
+            let weekdays = Set(weekdaySegment.compactMap { char in
+                weekdaySymbols.first { $0.0 == char }?.1
+            })
+            guard !weekdays.isEmpty else { continue }
+            rules.append(Rule(weekdays: weekdays, time: time))
+        }
+        guard !rules.isEmpty else { return nil }
+
+        var shifts: [ParsedWorkShift] = []
+        for day in dayRange {
+            guard let date = calendar.date(from: DateComponents(year: year, month: month, day: day))
+            else { continue }
+            let weekday = calendar.component(.weekday, from: date)
+            for rule in rules where rule.weekdays.contains(weekday) {
+                if let shift = makeShift(
+                    year: year,
+                    month: month,
+                    day: day,
+                    time: rule.time,
+                    calendar: calendar
+                ) {
+                    shifts.append(shift)
+                }
+            }
+        }
+
+        guard !shifts.isEmpty else { return nil }
+        let kind = inferredKind(from: text)
+        return ParsedWorkSchedule(month: monthDate, title: kind.title, kind: kind, shifts: shifts)
     }
 
     private static func parseMonthHeader(_ line: String) -> (year: Int?, month: Int)? {

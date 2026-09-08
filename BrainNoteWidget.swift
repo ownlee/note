@@ -357,7 +357,7 @@ struct BrainNoteScheduleWidgetView: View {
         let isToday = Calendar.current.isDateInToday(date)
 
         VStack(spacing: 2) {
-            Text(date.formatted(.dateTime.day()))
+            Text("\(Calendar.current.component(.day, from: date))")
                 .font(.caption2.weight(isToday ? .bold : .medium))
                 .foregroundStyle(isToday ? Color.white : Color.primary)
                 .frame(width: 20, height: 20)

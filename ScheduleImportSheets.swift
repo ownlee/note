@@ -455,7 +455,7 @@ private struct ScheduleImportMonthPreview: View {
         let tint: Color = isOverlap ? .orange : kind.tint
 
         return VStack(spacing: 2) {
-            Text(date.formatted(.dateTime.day()))
+            Text("\(Calendar.current.component(.day, from: date))")
                 .font(.caption2.weight(.semibold))
 
             if let first {
