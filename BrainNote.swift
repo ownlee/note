@@ -33,6 +33,9 @@ enum BrainNoteIntent: String, Codable, Sendable {
 final class BrainNote {
     @Attribute(.unique) var id: UUID
     var rawText: String
+    /// AI-tidied, paragraph-broken rewrite of `rawText` for longer notes. Nil for short
+    /// notes and tasks, or until processing completes.
+    var formattedText: String?
     var createdAt: Date
     var category: BrainNoteCategory
     var eventDate: Date?
@@ -51,6 +54,7 @@ final class BrainNote {
     init(
         id: UUID = UUID(),
         rawText: String,
+        formattedText: String? = nil,
         createdAt: Date = Date(),
         category: BrainNoteCategory,
         eventDate: Date? = nil,
@@ -68,6 +72,7 @@ final class BrainNote {
     ) {
         self.id = id
         self.rawText = rawText
+        self.formattedText = formattedText
         self.createdAt = createdAt
         self.category = category
         self.eventDate = eventDate

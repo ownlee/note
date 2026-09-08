@@ -104,41 +104,59 @@ struct NoteCardView: View {
     let onRetryProcessing: () -> Void
     let onResolveIntent: (BrainNoteIntent) -> Void
 
-    /// Notes shorter than this read as a single glance and get the compact,
-    /// single-line row treatment instead of the full card layout.
+    @State private var isExpanded = false
+
+    /// Notes shorter than this read as a single glance and get the post-it,
+    /// single-line row treatment instead of the full note-style card.
     private var isShortNote: Bool {
         note.rawText.count <= 24 && !note.rawText.contains("\n")
             && note.eventDate == nil && note.tags.isEmpty
             && note.suggestedIntent == nil && note.processingState != .failed
     }
 
+    /// The AI's paragraph-reorganized rewrite when available, split on blank lines.
+    /// Falls back to the raw text (as one block) while processing hasn't produced one yet.
+    private var paragraphs: [String] {
+        let source = (note.formattedText?.isEmpty == false) ? note.formattedText! : note.rawText
+        let split = source
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return split.isEmpty ? [note.rawText] : split
+    }
+
+    private var needsExpansion: Bool { paragraphs.count >= 3 }
+
+    private var displayedParagraphs: [String] {
+        (isExpanded || !needsExpansion) ? paragraphs : Array(paragraphs.prefix(2))
+    }
+
     var body: some View {
         if isShortNote {
-            compactRow
+            postItRow
         } else {
-            fullCard
+            noteCard
         }
     }
 
-    private var compactRow: some View {
+    private var postItRow: some View {
         HStack(spacing: 10) {
-            Image(systemName: note.category.symbolName)
-                .font(.subheadline)
-                .foregroundStyle(note.category.tint)
-                .frame(width: 18)
-
             if note.category == .actionable, note.processingState == .complete {
                 Button(action: onToggleCompletion) {
-                    Image(systemName: note.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(note.isCompleted ? .green : .secondary)
+                    Image(systemName: note.isCompleted ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(note.isCompleted ? .green : Color.brown.opacity(0.6))
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(note.isCompleted ? "Mark as incomplete" : "Mark as complete")
+            } else {
+                Image(systemName: note.category.symbolName)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.brown.opacity(0.6))
             }
 
             Text(note.rawText)
-                .font(.subheadline)
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
                 .strikethrough(note.isCompleted, color: .secondary)
                 .lineLimit(1)
@@ -150,14 +168,25 @@ struct NoteCardView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.yellow.opacity(0.16), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
+        }
+        .overlay(alignment: .top) {
+            Capsule()
+                .fill(Color.yellow.opacity(0.45))
+                .frame(width: 36, height: 12)
+                .rotationEffect(.degrees(-4))
+                .offset(y: -6)
+        }
         .opacity(note.isCompleted ? 0.6 : 1)
         .accessibilityElement(children: .contain)
     }
 
-    private var fullCard: some View {
+    private var noteCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: note.category.symbolName)
@@ -186,19 +215,26 @@ struct NoteCardView: View {
                     .foregroundStyle(.secondary)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(note.rawText)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .strikethrough(note.isCompleted, color: .secondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(5)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(displayedParagraphs.enumerated()), id: \.offset) { _, paragraph in
+                    Text(paragraph)
+                        .font(.system(.body, design: .serif))
+                        .lineSpacing(3)
+                        .foregroundStyle(.primary)
+                        .strikethrough(note.isCompleted, color: .secondary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
-                if note.rawText.count > 220 {
-                    Text("Keep reading")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(note.category.tint)
+                if needsExpansion {
+                    Button {
+                        withAnimation(.snappy) { isExpanded.toggle() }
+                    } label: {
+                        Text(isExpanded ? "접기" : "계속 읽기")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(note.category.tint)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 

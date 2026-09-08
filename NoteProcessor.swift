@@ -20,6 +20,7 @@ final class NoteProcessor {
         note.category = result.category
         note.eventDate = result.eventDate
         note.tags = result.tags
+        note.formattedText = result.formattedText
         note.processingState = .complete
 
         try modelContext.save()
@@ -66,6 +67,13 @@ final class NoteProcessor {
                     dates and times removed. Choose the closest scheduleKind for events.
                     confidence is 0 to 1 and must be low when task vs event is ambiguous.
                     Return up to six short, lowercase tags without leading # characters.
+
+                    If the note reads as more than a short line (roughly three sentences or
+                    more, typically Reflective or Creative), return formattedText: the same
+                    content reorganized into 2 to 4 clear paragraphs separated by a blank line
+                    (\\n\\n). Keep the user's own words, language, and meaning — fix only run-on
+                    structure and paragraph breaks, never add or remove information, never
+                    summarize. For short notes and tasks, return null for formattedText.
                     """
                 ),
                 .init(role: "user", content: rawText)
@@ -107,6 +115,8 @@ final class NoteProcessor {
 
         do {
             let analysis = try JSONDecoder().decode(NoteAnalysisPayload.self, from: outputData)
+            let formattedText = analysis.formattedText?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             return NoteProcessingResult(
                 intent: analysis.intent.brainNoteIntent,
                 category: analysis.category.brainNoteCategory,
@@ -115,7 +125,8 @@ final class NoteProcessor {
                 title: analysis.title.trimmingCharacters(in: .whitespacesAndNewlines),
                 scheduleKind: analysis.scheduleKind.scheduleKind,
                 confidence: min(max(analysis.confidence, 0), 1),
-                tags: normalizedTags(analysis.tags)
+                tags: normalizedTags(analysis.tags),
+                formattedText: (formattedText?.isEmpty ?? true) ? nil : formattedText
             )
         } catch {
             if let processorError = error as? NoteProcessorError {
@@ -342,6 +353,7 @@ struct NoteProcessingResult: Sendable {
     let scheduleKind: ScheduleKind
     let confidence: Double
     let tags: [String]
+    let formattedText: String?
 }
 
 struct ScheduleContextResult: Sendable {
@@ -562,6 +574,7 @@ private struct NoteAnalysisPayload: Decodable {
     let scheduleKind: ParsedScheduleKind
     let confidence: Double
     let tags: [String]
+    let formattedText: String?
 }
 
 private enum ParsedNoteIntent: String, Decodable {
@@ -627,7 +640,7 @@ private struct ResponsesRequest: Encodable {
         let properties = Properties()
         let required = [
             "intent", "category", "eventDate", "endDate", "title",
-            "scheduleKind", "confidence", "tags"
+            "scheduleKind", "confidence", "tags", "formattedText"
         ]
         let additionalProperties = false
 
@@ -640,6 +653,7 @@ private struct ResponsesRequest: Encodable {
             let scheduleKind = ScheduleKindProperty()
             let confidence = NumberProperty()
             let tags = TagsProperty()
+            let formattedText = NullableFormattedTextProperty()
         }
 
         struct IntentProperty: Encodable {
@@ -665,6 +679,14 @@ private struct ResponsesRequest: Encodable {
         struct NullableStringProperty: Encodable {
             let type = ["string", "null"]
             let description = "ISO 8601 timestamp with time-zone offset, or null."
+        }
+
+        struct NullableFormattedTextProperty: Encodable {
+            let type = ["string", "null"]
+            let description = """
+            Paragraph-reorganized rewrite of the note, paragraphs separated by \\n\\n, \
+            or null for short notes and tasks.
+            """
         }
 
         struct TagsProperty: Encodable {
