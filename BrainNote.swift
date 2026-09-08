@@ -98,4 +98,13 @@ final class BrainNote {
         get { suggestedScheduleKindRaw.flatMap(ScheduleKind.init(rawValue:)) }
         set { suggestedScheduleKindRaw = newValue?.rawValue }
     }
+
+    /// A short, single-line note or task — rendered as a post-it rather than a full card,
+    /// and pinned to the top of note feeds. Tags never disqualify it: the AI tags almost
+    /// everything, short or not.
+    var isPostIt: Bool {
+        rawText.count <= 24 && !rawText.contains("\n")
+            && eventDate == nil
+            && suggestedIntent == nil && processingState != .failed
+    }
 }

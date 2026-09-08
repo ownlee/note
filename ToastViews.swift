@@ -34,6 +34,44 @@ struct StatusToast: View {
 }
 
 
+struct CleanupPromptToast: View {
+    let message: String
+    let onClear: () -> Void
+    let onLater: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "note.text")
+                .foregroundStyle(.brown)
+
+            Text(message)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(2)
+
+            Spacer(minLength: 8)
+
+            Button("Later", action: onLater)
+                .font(.subheadline.weight(.medium))
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+            Button("Clear", action: onClear)
+                .font(.subheadline.weight(.bold))
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .frame(maxWidth: 520)
+        .background(.regularMaterial, in: Capsule())
+        .overlay {
+            Capsule().stroke(Color.primary.opacity(0.1), lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.16), radius: 16, y: 7)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct UndoToast: View {
     let message: String
     let onUndo: () -> Void

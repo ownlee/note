@@ -123,12 +123,57 @@ extension ContentView {
             .prefix(3)
             .map { $0 }
     }
+    var archivedPostIts: [BrainNote] {
+        archivedNotes.filter(\.isPostIt)
+    }
+    var weeklyPostItCleanupDue: Bool {
+        guard !archivedPostIts.isEmpty else { return false }
+        guard lastPostItCleanupPromptAt > 0 else { return true }
+        let last = Date(timeIntervalSince1970: lastPostItCleanupPromptAt)
+        return Date().timeIntervalSince(last) > 7 * 24 * 60 * 60
+    }
+    @ViewBuilder
+    var postItArchivePile: some View {
+        if !archivedPostIts.isEmpty {
+            Button {
+                selectScope(.archive)
+            } label: {
+                HStack(spacing: 8) {
+                    ZStack {
+                        ForEach(Array(archivedPostIts.prefix(3).enumerated()), id: \.offset) { index, _ in
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(Color.yellow.opacity(0.5))
+                                .frame(width: 20, height: 20)
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                        .stroke(Color.yellow.opacity(0.7), lineWidth: 1)
+                                }
+                                .rotationEffect(.degrees(Double(index) * 9 - 9))
+                                .offset(x: Double(index) * 3)
+                        }
+                    }
+                    .frame(width: 28, height: 20, alignment: .leading)
+
+                    Text("Done \(archivedPostIts.count)")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.primary.opacity(0.045), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(archivedPostIts.count) completed notes archived")
+        }
+    }
     var recentNotes: [BrainNote] {
         let featuredIDs = Set((upcomingNotes + resurfacedNotes).map(\.id))
-        return activeNotes
-            .filter { !featuredIDs.contains($0.id) }
-            .prefix(6)
-            .map { $0 }
+        let candidates = activeNotes.filter { !featuredIDs.contains($0.id) }
+        // Post-its stay pinned to the top of the feed, most recent first, ahead of
+        // everything else — completed ones are auto-archived so they drop out here.
+        let pinned = candidates.filter(\.isPostIt)
+        let rest = candidates.filter { !$0.isPostIt }
+        return Array((pinned + rest).prefix(6))
     }
     var incompleteActionableNotes: [BrainNote] {
         activeNotes.filter {
@@ -182,6 +227,8 @@ extension ContentView {
     var canvasHeader: some View {
         VStack(alignment: .leading, spacing: 10) {
             scopePicker
+
+            postItArchivePile
 
             if shouldShowCardGestureHint {
                 cardGestureHint

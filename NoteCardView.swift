@@ -106,15 +106,6 @@ struct NoteCardView: View {
 
     @State private var isExpanded = false
 
-    /// Notes shorter than this read as a single glance and get the post-it,
-    /// single-line row treatment instead of the full note-style card. Tags don't
-    /// disqualify a short note — the AI tags almost everything, short or not.
-    private var isShortNote: Bool {
-        note.rawText.count <= 24 && !note.rawText.contains("\n")
-            && note.eventDate == nil
-            && note.suggestedIntent == nil && note.processingState != .failed
-    }
-
     /// The AI's paragraph-reorganized rewrite when available, split on blank lines.
     /// Falls back to single line breaks (e.g. pasted bullet-style text with no blank
     /// lines between them), then to the raw text as one block.
@@ -134,14 +125,14 @@ struct NoteCardView: View {
             .filter { !$0.isEmpty }
     }
 
-    private var needsExpansion: Bool { paragraphs.count >= 3 }
+    private var needsExpansion: Bool { paragraphs.count > 1 }
 
     private var displayedParagraphs: [String] {
-        (isExpanded || !needsExpansion) ? paragraphs : Array(paragraphs.prefix(2))
+        (isExpanded || !needsExpansion) ? paragraphs : Array(paragraphs.prefix(1))
     }
 
     var body: some View {
-        if isShortNote {
+        if note.isPostIt {
             postItRow
         } else {
             noteCard

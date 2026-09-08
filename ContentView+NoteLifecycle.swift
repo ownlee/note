@@ -230,6 +230,15 @@ extension ContentView {
 
         if note.isCompleted {
             notificationScheduler.cancelReminder(for: note)
+            if note.isPostIt {
+                // Let the checkmark animation land before the post-it peels off the
+                // top of the feed into the archive pile.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(420))
+                    guard note.isCompleted, note.lifecycleState == .active else { return }
+                    archiveCompletedPostIt(note)
+                }
+            }
         } else {
             Task { @MainActor in
                 do {
@@ -264,6 +273,39 @@ extension ContentView {
             note.lifecycleState = .archived
             note.archivedAt = Date()
             note.trashedAt = nil
+        }
+    }
+    func archiveCompletedPostIt(_ note: BrainNote) {
+        applyLifecycleChange(to: note, message: "Done · moved to Archive") {
+            note.lifecycleState = .archived
+            note.archivedAt = Date()
+            note.trashedAt = nil
+        }
+    }
+    /// Moves every completed post-it out of Archive into Recently Deleted (still
+    /// recoverable there for 30 days) and resets the weekly cleanup timer.
+    func clearArchivedPostIts() {
+        let targets = archivedPostIts
+        guard !targets.isEmpty else { return }
+
+        withAnimation(.snappy) {
+            for note in targets {
+                note.lifecycleState = .trashed
+                note.trashedAt = Date()
+            }
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            processingError = "The notes could not be cleared: \(error.localizedDescription)"
+        }
+
+        lastPostItCleanupPromptAt = Date().timeIntervalSince1970
+    }
+    func dismissPostItCleanupPrompt() {
+        withAnimation(.snappy) {
+            lastPostItCleanupPromptAt = Date().timeIntervalSince1970
         }
     }
     func unarchive(_ note: BrainNote) {

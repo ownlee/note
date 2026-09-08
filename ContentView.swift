@@ -29,6 +29,7 @@ struct ContentView: View {
     @State var displayedScheduleMonth = Date.now
     @State var selectedScheduleDay: Date?
     @AppStorage("brainnote.didLearnCardGestures") var didLearnCardGestures = false
+    @AppStorage("brainnote.lastPostItCleanupPromptAt") var lastPostItCleanupPromptAt: Double = 0
     @State var scheduleImportMessage: String?
     @State var scheduleImportDismissTask: Task<Void, Never>?
     @State var isSchedulePhotoPickerPresented = false
@@ -137,6 +138,15 @@ struct ContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 94)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if weeklyPostItCleanupDue {
+                    CleanupPromptToast(
+                        message: "\(archivedPostIts.count) completed notes from last week — clear them out?",
+                        onClear: clearArchivedPostIts,
+                        onLater: dismissPostItCleanupPrompt
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 94)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(.snappy, value: pendingUndo?.id)
@@ -144,6 +154,7 @@ struct ContentView: View {
             .animation(.snappy, value: isReadingScheduleImage)
             .animation(.snappy, value: isSearchPresented)
             .animation(.snappy, value: didLearnCardGestures)
+            .animation(.snappy, value: weeklyPostItCleanupDue)
             .navigationTitle("")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
